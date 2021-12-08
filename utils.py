@@ -45,10 +45,10 @@ def plot_dual_bar_chart(topics_summary, scores_summary, topics_text, scores_text
 
     fig.update_traces(texttemplate='%{text:0.1f}%', textposition='outside')
     fig.update_layout(height=600, width=700) #, title_text="Predictions for")
+    fig.update_xaxes(range=[0,115])
     fig.update_xaxes(matches='x')
     fig.update_yaxes(showticklabels=False) # hide all the xticks
     fig.update_yaxes(showticklabels=True, row=1, col=1)
-
 
     st.plotly_chart(fig)
 
