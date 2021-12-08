@@ -18,8 +18,9 @@ ex_long_text = example_long_text_load()
 
 if __name__ == '__main__':
     st.header("Summzarization & Multi-label Classification for Long Text")
-    st.write("This app summarizes and then classifies your long text with multiple labels (_output includes partial summaries, \
-        bar chart and data table of labels with confidence scores as well as a data download link_).")
+    st.write("This app summarizes and then classifies your long text with multiple labels (_Please allow for a minimum of 30secs to load results_).")
+    st.write("Inputs: User enters their own custom text and labels")
+    st.write("Outputs: A summary of the text, pre and post summary label likelihood percentages and a downloadable csv of the results")
 
     with st.form(key='my_form'):
         example_text = ex_long_text #ex_text
