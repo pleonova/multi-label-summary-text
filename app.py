@@ -1,4 +1,3 @@
-# Reference: https://huggingface.co/spaces/team-zero-shot-nli/zero-shot-nli/blob/main/app.py
 
 from os import write
 import pandas as pd
@@ -8,7 +7,6 @@ import streamlit as st
 
 from models import create_nest_sentences, load_summary_model, summarizer_gen, load_model, classifier_zero
 from utils import plot_result, plot_dual_bar_chart, examples_load, example_long_text_load
-# from utils import plot_result, examples_load, example_long_text_load, to_excel
 import json
 
 
@@ -31,8 +29,6 @@ if __name__ == '__main__':
         if text_input == display_text:
             text_input = example_text
 
-        # minimum_tokens = 30
-        # maximum_tokens = 100
         labels = st.text_input('Possible labels (comma-separated):',ex_labels, max_chars=1000)
         labels = list(set([x.strip() for x in labels.strip().split(',') if len(x.strip()) > 0]))
         submit_button = st.form_submit_button(label='Submit')
@@ -40,8 +36,6 @@ if __name__ == '__main__':
     if submit_button:
         if len(labels) == 0:
             st.write('Enter some text and at least one possible topic to see predictions.')
-
-
 
         # For each body of text, create text chunks of a certain token size required for the transformer
         nested_sentences = create_nest_sentences(document = text_input, token_max_length = 1024)
@@ -69,20 +63,16 @@ if __name__ == '__main__':
         st.markdown(final_summary)
 
         topics, scores = classifier_zero(classifier, sequence=final_summary, labels=labels, multi_class=True)
-        
         # st.markdown("### Top Label Predictions: Combined Summary")
         # plot_result(topics[::-1][:], scores[::-1][:])
-
         # st.markdown("### Download Data")
         data = pd.DataFrame({'label': topics, 'scores_from_summary': scores})
         # st.dataframe(data)
-
         # coded_data = base64.b64encode(data.to_csv(index = False). encode ()).decode()
         # st.markdown(
         #     f'<a href="data:file/csv;base64, {coded_data}" download = "data.csv">Download Data</a>',
         #     unsafe_allow_html = True
         #     )
-
 
         st.markdown("### Top Label Predictions: Summary & Full Text")
         topics_ex_text, scores_ex_text = classifier_zero(classifier, sequence=example_text, labels=labels, multi_class=True)

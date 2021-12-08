@@ -33,14 +33,12 @@ def load_summary_model():
     summarizer = pipeline(task='summarization', model=model_name)
     return summarizer
 
-
 # def load_summary_model():
 #     model_name = "facebook/bart-large-mnli"
 #     tokenizer = BartTokenizer.from_pretrained(model_name)
 #     model = BartForConditionalGeneration.from_pretrained(model_name)
 #     summarizer = pipeline(task='summarization', model=model, tokenizer=tokenizer, framework='pt')
 #     return summarizer
-
 
 def summarizer_gen(summarizer, sequence:str, maximum_tokens:int, minimum_tokens:int):
 	output = summarizer(sequence, num_beams=4, max_length=maximum_tokens, min_length=minimum_tokens, do_sample=False)
