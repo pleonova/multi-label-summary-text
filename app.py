@@ -32,7 +32,7 @@ with st.form(key='my_form'):
     submit_button = st.form_submit_button(label='Submit')
 
 
-with st.spinner('Loading pretrained models (_please allow for 20 seconds_...'):
+with st.spinner('Loading pretrained models (_please allow for 10 seconds_)...'):
     summarizer = load_summary_model()   
     classifier = load_model()
 
@@ -53,12 +53,12 @@ if submit_button:
         # For each chunk of sentences (within the token max), generate a summary
         for n in range(0, len(nested_sentences)):
             text_chunk = " ".join(map(str, nested_sentences[n]))
-            st.markdown(f"###### Chunk {n+1}/{len(nested_sentences)}" )
+            st.markdown(f"###### Original Text Chunk {n+1}/{len(nested_sentences)}" )
             st.markdown(text_chunk)
 
             chunk_summary = summarizer_gen(summarizer, sequence=text_chunk, maximum_tokens = 300, minimum_tokens = 20)
             summary.append(chunk_summary) 
-            st.markdown("###### Partial Summary")
+            st.markdown(f"###### Partial Summary {n+1}/{len(nested_sentences)}")
             st.markdown(chunk_summary)
             # Combine all the summaries into a list and compress into one document, again
             final_summary = " \n".join(list(summary))
@@ -67,6 +67,8 @@ if submit_button:
         st.markdown("### Combined Summary")
         st.markdown(final_summary)
     
+    
+        st.markdown("### Top Label Predictions on Summary & Full Text")
         with st.spinner('Matching labels...'):
             topics, scores = classifier_zero(classifier, sequence=final_summary, labels=labels, multi_class=True)
             # st.markdown("### Top Label Predictions: Combined Summary")
@@ -80,7 +82,6 @@ if submit_button:
             #     unsafe_allow_html = True
             #     )
 
-            st.markdown("### Top Label Predictions: Summary & Full Text")
             topics_ex_text, scores_ex_text = classifier_zero(classifier, sequence=example_text, labels=labels, multi_class=True)
             plot_dual_bar_chart(topics, scores, topics_ex_text, scores_ex_text)
 
