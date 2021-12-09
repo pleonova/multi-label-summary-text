@@ -32,11 +32,9 @@ with st.form(key='my_form'):
     submit_button = st.form_submit_button(label='Submit')
 
 
-with st.spinner('Loading pretrained models...'):
+with st.spinner('Loading pretrained models (_please allow for 20 seconds_...'):
     summarizer = load_summary_model()   
     classifier = load_model()
-st.success('Ready for inference...')
-
 
 
 if submit_button:
