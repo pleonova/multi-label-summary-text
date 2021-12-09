@@ -15,9 +15,9 @@ ex_long_text = example_long_text_load()
 
 # if __name__ == '__main__':
 st.header("Summzarization & Multi-label Classification for Long Text")
-st.write("This app summarizes and then classifies your long text with multiple labels (_Please allow for a minimum of 30secs to load results_).")
-st.write("Inputs: User enters their own custom text and labels")
-st.write("Outputs: A summary of the text, pre and post summary label likelihood percentages and a downloadable csv of the results")
+st.write("This app summarizes and then classifies your long text with multiple labels.")
+st.write("__Inputs__: User enters their own custom text and labels.")
+st.write("__Outputs__: A summary of the text, label likelihood percentages and a downloadable csv of the results.")
 
 with st.form(key='my_form'):
     example_text = ex_long_text #ex_text
@@ -31,11 +31,11 @@ with st.form(key='my_form'):
     labels = list(set([x.strip() for x in labels.strip().split(',') if len(x.strip()) > 0]))
     submit_button = st.form_submit_button(label='Submit')
 
+
 with st.spinner('Loading pretrained models...'):
     summarizer = load_summary_model()   
     classifier = load_model()
-st.success('All Done!')
-
+st.success('Ready for inference...')
 
 if submit_button:
     if len(labels) == 0:
@@ -65,27 +65,29 @@ if submit_button:
     # final_summary = summarizer_gen(summarizer, sequence=text_input, maximum_tokens = 30, minimum_tokens = 100)
     st.markdown("### Combined Summary")
     st.markdown(final_summary)
-
-    topics, scores = classifier_zero(classifier, sequence=final_summary, labels=labels, multi_class=True)
-    # st.markdown("### Top Label Predictions: Combined Summary")
-    # plot_result(topics[::-1][:], scores[::-1][:])
-    # st.markdown("### Download Data")
-    data = pd.DataFrame({'label': topics, 'scores_from_summary': scores})
-    # st.dataframe(data)
-    # coded_data = base64.b64encode(data.to_csv(index = False). encode ()).decode()
-    # st.markdown(
-    #     f'<a href="data:file/csv;base64, {coded_data}" download = "data.csv">Download Data</a>',
-    #     unsafe_allow_html = True
-    #     )
-
-    st.markdown("### Top Label Predictions: Summary & Full Text")
-    topics_ex_text, scores_ex_text = classifier_zero(classifier, sequence=example_text, labels=labels, multi_class=True)
-    plot_dual_bar_chart(topics, scores, topics_ex_text, scores_ex_text)
-
-    data_ex_text = pd.DataFrame({'label': topics_ex_text, 'scores_from_full_text': scores_ex_text})
-    data2 = pd.merge(data, data_ex_text, on = ['label'])
-    st.markdown("### Data Table")
     
+    with st.spinner('Matching labels...'):
+        topics, scores = classifier_zero(classifier, sequence=final_summary, labels=labels, multi_class=True)
+        # st.markdown("### Top Label Predictions: Combined Summary")
+        # plot_result(topics[::-1][:], scores[::-1][:])
+        # st.markdown("### Download Data")
+        data = pd.DataFrame({'label': topics, 'scores_from_summary': scores})
+        # st.dataframe(data)
+        # coded_data = base64.b64encode(data.to_csv(index = False). encode ()).decode()
+        # st.markdown(
+        #     f'<a href="data:file/csv;base64, {coded_data}" download = "data.csv">Download Data</a>',
+        #     unsafe_allow_html = True
+        #     )
+
+        st.markdown("### Top Label Predictions: Summary & Full Text")
+        topics_ex_text, scores_ex_text = classifier_zero(classifier, sequence=example_text, labels=labels, multi_class=True)
+        plot_dual_bar_chart(topics, scores, topics_ex_text, scores_ex_text)
+
+        data_ex_text = pd.DataFrame({'label': topics_ex_text, 'scores_from_full_text': scores_ex_text})
+        data2 = pd.merge(data, data_ex_text, on = ['label'])
+        st.markdown("### Data Table")
+    st.success('Almost done, see download link below.')
+        
     coded_data = base64.b64encode(data2.to_csv(index = False). encode ()).decode()
     st.markdown(
         f'<a href="data:file/csv;base64, {coded_data}" download = "data.csv">Click here to download the data</a>',
