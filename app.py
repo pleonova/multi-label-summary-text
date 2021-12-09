@@ -31,6 +31,7 @@ with st.form(key='my_form'):
     labels = list(set([x.strip() for x in labels.strip().split(',') if len(x.strip()) > 0]))
     submit_button = st.form_submit_button(label='Submit')
 
+
 summarizer = load_summary_model()   
 classifier = load_model()
 
@@ -38,6 +39,7 @@ if submit_button:
     if len(labels) == 0:
         st.write('Enter some text and at least one possible topic to see predictions.')
 
+    with st.spinner('Generating partial summaries...')
     # For each body of text, create text chunks of a certain token size required for the transformer
     nested_sentences = create_nest_sentences(document = text_input, token_max_length = 1024)
 
@@ -63,6 +65,7 @@ if submit_button:
     st.markdown("### Combined Summary")
     st.markdown(final_summary)
 
+    with st.spinner('Matching labels to text...')
     topics, scores = classifier_zero(classifier, sequence=final_summary, labels=labels, multi_class=True)
     # st.markdown("### Top Label Predictions: Combined Summary")
     # plot_result(topics[::-1][:], scores[::-1][:])
@@ -79,6 +82,7 @@ if submit_button:
     topics_ex_text, scores_ex_text = classifier_zero(classifier, sequence=example_text, labels=labels, multi_class=True)
     plot_dual_bar_chart(topics, scores, topics_ex_text, scores_ex_text)
 
+    with st.spinner('Creating a download link...')
     data_ex_text = pd.DataFrame({'label': topics_ex_text, 'scores_from_full_text': scores_ex_text})
     data2 = pd.merge(data, data_ex_text, on = ['label'])
     st.markdown("### Data Table")
@@ -89,3 +93,5 @@ if submit_button:
         unsafe_allow_html = True
         )
     st.dataframe(data2)
+
+    st.success('All Done!')
