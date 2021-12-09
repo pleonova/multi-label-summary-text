@@ -41,7 +41,7 @@ if submit_button:
     if len(labels) == 0:
         st.write('Enter some text and at least one possible topic to see predictions.')
     
-    with st.spinner('Generating summaries...'):
+    with st.spinner('Generating summaries and matching labels...'):
         # For each body of text, create text chunks of a certain token size required for the transformer
         nested_sentences = create_nest_sentences(document = text_input, token_max_length = 1024)
 
@@ -67,7 +67,7 @@ if submit_button:
         st.markdown("### Combined Summary")
         st.markdown(final_summary)
     
-    
+
         st.markdown("### Top Label Predictions on Summary & Full Text")
         with st.spinner('Matching labels...'):
             topics, scores = classifier_zero(classifier, sequence=final_summary, labels=labels, multi_class=True)
