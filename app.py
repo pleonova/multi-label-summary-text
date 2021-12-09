@@ -9,9 +9,6 @@ from models import create_nest_sentences, load_summary_model, summarizer_gen, lo
 from utils import plot_result, plot_dual_bar_chart, examples_load, example_long_text_load
 import json
 
-
-summarizer = load_summary_model()   
-classifier = load_model()
 ex_text, ex_license, ex_labels = examples_load()
 ex_long_text = example_long_text_load()
 
@@ -33,6 +30,9 @@ with st.form(key='my_form'):
     labels = st.text_input('Possible labels (comma-separated):',ex_labels, max_chars=1000)
     labels = list(set([x.strip() for x in labels.strip().split(',') if len(x.strip()) > 0]))
     submit_button = st.form_submit_button(label='Submit')
+
+summarizer = load_summary_model()   
+classifier = load_model()
 
 if submit_button:
     if len(labels) == 0:
