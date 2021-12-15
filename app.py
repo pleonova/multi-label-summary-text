@@ -1,5 +1,6 @@
 
 from os import write
+import time
 import pandas as pd
 import base64
 from typing import Sequence
@@ -32,9 +33,15 @@ with st.form(key='my_form'):
     submit_button = st.form_submit_button(label='Submit')
 
 
-with st.spinner('Loading pretrained models (_please allow for 10 seconds_)...'):
+with st.spinner('Loading pretrained summarizer mnli model...'):
+    start = time.time()
     summarizer = load_summary_model()   
-    classifier = load_model()
+    st.success(f'Time taken to load model: {round(time.time() - start,4)} seconds')
+
+with st.spinner('Loading pretrained classifier mnli model...'):
+    start = time.time()
+    classifier = load_model()    
+    st.success(f'Time taken to load model: {round(time.time() - start,4)} seconds')
 
 
 if submit_button:
