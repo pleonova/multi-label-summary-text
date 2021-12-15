@@ -36,12 +36,12 @@ with st.form(key='my_form'):
 with st.spinner('Loading pretrained summarizer mnli model...'):
     start = time.time()
     summarizer = load_summary_model()   
-    st.success(f'Time taken to load model: {round(time.time() - start,4)} seconds')
+    st.success(f'Time taken to load summarizer mnli model: {round(time.time() - start,4)} seconds')
 
 with st.spinner('Loading pretrained classifier mnli model...'):
     start = time.time()
     classifier = load_model()    
-    st.success(f'Time taken to load model: {round(time.time() - start,4)} seconds')
+    st.success(f'Time taken to load classifier mnli model: {round(time.time() - start,4)} seconds')
 
 
 if submit_button:
