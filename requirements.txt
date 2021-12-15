@@ -1,6 +1,5 @@
 transformers[sentencepiece]==4.11.0
 pandas
-time
 streamlit
 plotly
 torch
