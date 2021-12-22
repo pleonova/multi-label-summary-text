@@ -33,7 +33,7 @@ with st.form(key='my_form'):
     
     radio = st.radio(
         "Are ground truth labels available?",
-        ('Yes','No'))
+        ('No', 'Yes'))
 
     if radio == 'Yes':
         glabels = st.text_input('Enter known labels (comma-separated):',ex_glabels, max_chars=1000)
