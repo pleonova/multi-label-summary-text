@@ -23,7 +23,7 @@ st.write("__Outputs__: A summary of the text, label likelihood percentages and a
 with st.form(key='my_form'):
     example_text = ex_long_text #ex_text
     display_text = "[Excerpt from Project Gutenberg: Frankenstein]\n" + example_text + "\n\n" + ex_license
-    text_input = st.text_area("Input any text you want to summaryize & classify here (keep in mind very long text will take a while to process):", display_text)
+    text_input = st.text_area("Input any text you want to summarize & classify here (keep in mind very long text will take a while to process):", display_text)
 
     if text_input == display_text:
         text_input = example_text
