@@ -10,7 +10,7 @@ from models import create_nest_sentences, load_summary_model, summarizer_gen, lo
 from utils import plot_result, plot_dual_bar_chart, examples_load, example_long_text_load
 import json
 
-ex_text, ex_license, ex_labels = examples_load()
+ex_text, ex_license, ex_labels, ex_glabels = examples_load()
 ex_long_text = example_long_text_load()
 
 
@@ -28,8 +28,17 @@ with st.form(key='my_form'):
     if text_input == display_text:
         text_input = example_text
 
-    labels = st.text_input('Possible labels (comma-separated):',ex_labels, max_chars=1000)
+    labels = st.text_input('Enter possible labels (comma-separated):',ex_labels, max_chars=1000)
     labels = list(set([x.strip() for x in labels.strip().split(',') if len(x.strip()) > 0]))
+    
+    radio = st.radio(
+        "Are ground truth labels available?",
+        ('Yes','No'))
+
+    if radio == 'Yes':
+        glabels = st.text_input('Enter known labels (comma-separated):',ex_glabels, max_chars=1000)
+        glabels = list(set([x.strip() for x in glabels.strip().split(',') if len(x.strip()) > 0]))
+
     submit_button = st.form_submit_button(label='Submit')
 
 
