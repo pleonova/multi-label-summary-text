@@ -18,7 +18,8 @@ ex_long_text = example_long_text_load()
 st.header("Summzarization & Multi-label Classification for Long Text")
 st.write("This app summarizes and then classifies your long text with multiple labels.")
 st.write("__Inputs__: User enters their own custom text and labels.")
-st.write("__Outputs__: A summary of the text, label likelihood percentages and a downloadable csv of the results.")
+st.write("__Outputs__: A summary of the text, likelihood percentages for each label and a downloadable csv of the results. \
+    Option to evaluate results against a list of ground truth labels, if available.")
 
 with st.form(key='my_form'):
     example_text = ex_long_text #ex_text
@@ -31,13 +32,12 @@ with st.form(key='my_form'):
     labels = st.text_input('Enter possible labels (comma-separated):',ex_labels, max_chars=1000)
     labels = list(set([x.strip() for x in labels.strip().split(',') if len(x.strip()) > 0]))
     
-    radio = st.radio(
-        "Are ground truth labels available?",
-        ('No', 'Yes'))
+    glabels = st.text_input('If available, enter ground truth labels to evaluate results, otherwise leave blank (comma-separated):',ex_glabels, max_chars=1000)
+    glabels = list(set([x.strip() for x in glabels.strip().split(',') if len(x.strip()) > 0]))
 
-    if radio == 'Yes':
-        glabels = st.text_input('Enter known labels (comma-separated):',ex_glabels, max_chars=1000)
-        glabels = list(set([x.strip() for x in glabels.strip().split(',') if len(x.strip()) > 0]))
+    threshold_value = st.slider(
+         'Select a threshold cutoff for matching percentage (used for ground truth label evaluation)',
+         0.0, 1.0, (0.5))
 
     submit_button = st.form_submit_button(label='Submit')
 
