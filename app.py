@@ -115,7 +115,6 @@ if submit_button:
                 data2['is_true_label'].fillna(0, inplace = True)
 
             st.markdown("### Data Table")
-
             with st.spinner('Generating a table of results and a download link...'):
                 coded_data = base64.b64encode(data2.to_csv(index = False). encode ()).decode()
                 st.markdown(
@@ -125,12 +124,19 @@ if submit_button:
                 st.dataframe(data2)
 
             if len(glabels) > 0:
+                st.markdown("### Evaluation Metrics")
                 with st.spinner('Evaluating output against ground truth...'):
-                    report = classification_report(y_true = data2[['is_true_label']], 
-                        y_pred = (data2[['scores_from_full_text']] >= threshold_value) * 1.0,
-                        output_dict=True)
-                    df_report = pd.DataFrame(report).transpose()
-                    st.dataframe(df_report)
+
+                    section_header_description = ['Summary Label Performance', 'Original Full Text Label Performance']
+                    data_headers = ['scores_from_summary', 'scores_from_full_text']
+                    for i in range(0,2):
+                        st.markdown(f"##### {section_header_description[i]}")
+                        report = classification_report(y_true = data2[['is_true_label']], 
+                            y_pred = (data2[[data_headers[i]]] >= threshold_value) * 1.0,
+                            output_dict=True)
+                        df_report = pd.DataFrame(report).transpose()
+                        st.markdown(f"Threshold set for: {threshold_value}")
+                        st.dataframe(df_report)
 
             st.success('All done!')
             st.balloons()
