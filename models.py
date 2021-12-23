@@ -1,5 +1,7 @@
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
+import streamlit as st
+
 
 import spacy
 nlp = spacy.load('en_core_web_sm')
@@ -28,6 +30,7 @@ def create_nest_sentences(document:str, token_max_length = 1024):
   return nested
 
 # Reference: https://huggingface.co/facebook/bart-large-mnli
+@st.cache(allow_output_mutation=True)
 def load_summary_model():
     model_name = "facebook/bart-large-mnli"
     summarizer = pipeline(task='summarization', model=model_name)
@@ -57,6 +60,7 @@ def summarizer_gen(summarizer, sequence:str, maximum_tokens:int, minimum_tokens:
 
 
 # Reference: https://huggingface.co/spaces/team-zero-shot-nli/zero-shot-nli/blob/main/utils.py
+@st.cache(allow_output_mutation=True)
 def load_model():
     model_name = "facebook/bart-large-mnli"
     tokenizer = AutoTokenizer.from_pretrained(model_name)
