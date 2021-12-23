@@ -5,6 +5,8 @@ import pandas as pd
 import base64
 from typing import Sequence
 import streamlit as st
+from sklearn.metrics import classification_report
+
 
 from models import create_nest_sentences, load_summary_model, summarizer_gen, load_model, classifier_zero
 from utils import plot_result, plot_dual_bar_chart, examples_load, example_long_text_load
@@ -102,7 +104,16 @@ if submit_button:
             plot_dual_bar_chart(topics, scores, topics_ex_text, scores_ex_text)
 
             data_ex_text = pd.DataFrame({'label': topics_ex_text, 'scores_from_full_text': scores_ex_text})
+            
             data2 = pd.merge(data, data_ex_text, on = ['label'])
+
+            if len(glabels) > 0:
+                gdata = pd.DataFrame({'label': glabels})
+                gdata['is_true_label'] = 1            
+            
+                data2 = pd.merge(data2, gdata, how = 'left', on = ['label'])
+                data2['is_true_label'].fillna(0, inplace = True)
+
             st.markdown("### Data Table")
 
             with st.spinner('Generating a table of results and a download link...'):
@@ -112,5 +123,14 @@ if submit_button:
                     unsafe_allow_html = True
                     )
                 st.dataframe(data2)
+
+            if len(glabels) > 0:
+                with st.spinner('Evaluating output against ground truth...'):
+                    report = classification_report(y_true = data2[['is_true_label']], 
+                        y_pred = (data2[['scores_from_full_text']] >= threshold_value) * 1.0,
+                        output_dict=True)
+                    df_report = pd.DataFrame(report).transpose()
+                    st.dataframe(df_report)
+
             st.success('All done!')
             st.balloons()
