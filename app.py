@@ -5,12 +5,14 @@ import pandas as pd
 import base64
 from typing import Sequence
 import streamlit as st
+from sklearn.metrics import classification_report
+
 
 from models import create_nest_sentences, load_summary_model, summarizer_gen, load_model, classifier_zero
 from utils import plot_result, plot_dual_bar_chart, examples_load, example_long_text_load
 import json
 
-ex_text, ex_license, ex_labels = examples_load()
+ex_text, ex_license, ex_labels, ex_glabels = examples_load()
 ex_long_text = example_long_text_load()
 
 
@@ -18,18 +20,27 @@ ex_long_text = example_long_text_load()
 st.header("Summzarization & Multi-label Classification for Long Text")
 st.write("This app summarizes and then classifies your long text with multiple labels.")
 st.write("__Inputs__: User enters their own custom text and labels.")
-st.write("__Outputs__: A summary of the text, label likelihood percentages and a downloadable csv of the results.")
+st.write("__Outputs__: A summary of the text, likelihood percentages for each label and a downloadable csv of the results. \
+    Option to evaluate results against a list of ground truth labels, if available.")
 
 with st.form(key='my_form'):
     example_text = ex_long_text #ex_text
     display_text = "[Excerpt from Project Gutenberg: Frankenstein]\n" + example_text + "\n\n" + ex_license
-    text_input = st.text_area("Input any text you want to summaryize & classify here (keep in mind very long text will take a while to process):", display_text)
+    text_input = st.text_area("Input any text you want to summarize & classify here (keep in mind very long text will take a while to process):", display_text)
 
     if text_input == display_text:
         text_input = example_text
 
-    labels = st.text_input('Possible labels (comma-separated):',ex_labels, max_chars=1000)
+    labels = st.text_input('Enter possible labels (comma-separated):',ex_labels, max_chars=1000)
     labels = list(set([x.strip() for x in labels.strip().split(',') if len(x.strip()) > 0]))
+    
+    glabels = st.text_input('If available, enter ground truth labels to evaluate results, otherwise leave blank (comma-separated):',ex_glabels, max_chars=1000)
+    glabels = list(set([x.strip() for x in glabels.strip().split(',') if len(x.strip()) > 0]))
+
+    threshold_value = st.slider(
+         'Select a threshold cutoff for matching percentage (used for ground truth label evaluation)',
+         0.0, 1.0, (0.5))
+
     submit_button = st.form_submit_button(label='Submit')
 
 
@@ -93,15 +104,51 @@ if submit_button:
             plot_dual_bar_chart(topics, scores, topics_ex_text, scores_ex_text)
 
             data_ex_text = pd.DataFrame({'label': topics_ex_text, 'scores_from_full_text': scores_ex_text})
+            
             data2 = pd.merge(data, data_ex_text, on = ['label'])
-            st.markdown("### Data Table")
 
+            if len(glabels) > 0:
+                gdata = pd.DataFrame({'label': glabels})
+                gdata['is_true_label'] = int(1)           
+            
+                data2 = pd.merge(data2, gdata, how = 'left', on = ['label'])
+                data2['is_true_label'].fillna(0, inplace = True)
+
+            st.markdown("### Data Table")
             with st.spinner('Generating a table of results and a download link...'):
-                coded_data = base64.b64encode(data2.to_csv(index = False). encode ()).decode()
-                st.markdown(
-                    f'<a href="data:file/csv;base64, {coded_data}" download = "data.csv">Click here to download the data</a>',
-                    unsafe_allow_html = True
-                    )
                 st.dataframe(data2)
+
+                @st.cache
+                def convert_df(df):
+                     # IMPORTANT: Cache the conversion to prevent computation on every rerun
+                     return df.to_csv().encode('utf-8')
+                csv = convert_df(data2)
+                st.download_button(
+                     label="Download data as CSV",
+                     data=csv,
+                     file_name='text_labels.csv',
+                     mime='text/csv',
+                 )
+                # coded_data = base64.b64encode(data2.to_csv(index = False). encode ()).decode()
+                # st.markdown(
+                #     f'<a href="data:file/csv;base64, {coded_data}" download = "data.csv">Click here to download the data</a>',
+                #     unsafe_allow_html = True
+                #     )
+
+            if len(glabels) > 0:
+                st.markdown("### Evaluation Metrics")
+                with st.spinner('Evaluating output against ground truth...'):
+
+                    section_header_description = ['Summary Label Performance', 'Original Full Text Label Performance']
+                    data_headers = ['scores_from_summary', 'scores_from_full_text']
+                    for i in range(0,2):
+                        st.markdown(f"##### {section_header_description[i]}")
+                        report = classification_report(y_true = data2[['is_true_label']], 
+                            y_pred = (data2[[data_headers[i]]] >= threshold_value) * 1.0,
+                            output_dict=True)
+                        df_report = pd.DataFrame(report).transpose()
+                        st.markdown(f"Threshold set for: {threshold_value}")
+                        st.dataframe(df_report)
+
             st.success('All done!')
             st.balloons()

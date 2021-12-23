@@ -77,7 +77,7 @@ def plot_dual_bar_chart(topics_summary, scores_summary, topics_text, scores_text
 def examples_load():
     with open("examples.json") as f:
         data=json.load(f)
-    return data['text'], data['long_text_license'], data['labels']
+    return data['text'], data['long_text_license'], data['labels'], data['ground_labels']
 
 def example_long_text_load():
     with open("example_long_text.txt", "r") as f:
