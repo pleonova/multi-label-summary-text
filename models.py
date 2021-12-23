@@ -44,7 +44,7 @@ def load_summary_model():
 #     return summarizer
 
 def summarizer_gen(summarizer, sequence:str, maximum_tokens:int, minimum_tokens:int):
-	output = summarizer(sequence, num_beams=4, max_length=maximum_tokens, min_length=minimum_tokens, do_sample=False)
+	output = summarizer(sequence, num_beams=4, max_length=maximum_tokens, min_length=minimum_tokens, do_sample=False, early_stopping = True)
 	return output[0].get('summary_text')
 
 
