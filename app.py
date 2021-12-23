@@ -109,19 +109,31 @@ if submit_button:
 
             if len(glabels) > 0:
                 gdata = pd.DataFrame({'label': glabels})
-                gdata['is_true_label'] = 1            
+                gdata['is_true_label'] = int(1)           
             
                 data2 = pd.merge(data2, gdata, how = 'left', on = ['label'])
                 data2['is_true_label'].fillna(0, inplace = True)
 
             st.markdown("### Data Table")
             with st.spinner('Generating a table of results and a download link...'):
-                coded_data = base64.b64encode(data2.to_csv(index = False). encode ()).decode()
-                st.markdown(
-                    f'<a href="data:file/csv;base64, {coded_data}" download = "data.csv">Click here to download the data</a>',
-                    unsafe_allow_html = True
-                    )
                 st.dataframe(data2)
+
+                @st.cache
+                def convert_df(df):
+                     # IMPORTANT: Cache the conversion to prevent computation on every rerun
+                     return df.to_csv().encode('utf-8')
+                csv = convert_df(data2)
+                st.download_button(
+                     label="Download data as CSV",
+                     data=csv,
+                     file_name='text_labels.csv',
+                     mime='text/csv',
+                 )
+                # coded_data = base64.b64encode(data2.to_csv(index = False). encode ()).decode()
+                # st.markdown(
+                #     f'<a href="data:file/csv;base64, {coded_data}" download = "data.csv">Click here to download the data</a>',
+                #     unsafe_allow_html = True
+                #     )
 
             if len(glabels) > 0:
                 st.markdown("### Evaluation Metrics")
