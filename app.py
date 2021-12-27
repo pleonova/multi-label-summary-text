@@ -79,7 +79,7 @@ if submit_button:
             st.markdown(f"###### Partial Summary {n+1}/{len(nested_sentences)}")
             st.markdown(chunk_summary)
             # Combine all the summaries into a list and compress into one document, again
-            final_summary = " \n".join(list(summary))
+            final_summary = " \n\n".join(list(summary))
 
         # final_summary = summarizer_gen(summarizer, sequence=text_input, maximum_tokens = 30, minimum_tokens = 100)
         st.markdown("### Combined Summary")
