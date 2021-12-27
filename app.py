@@ -61,27 +61,28 @@ if submit_button:
     
     with st.spinner('Generating summaries and matching labels...'):
         my_expander = st.expander(label='Expand to see summary generation details')
-            with my_expander:
-                # For each body of text, create text chunks of a certain token size required for the transformer
-                nested_sentences = create_nest_sentences(document = text_input, token_max_length = 1024)
+        with my_expander:
+            # For each body of text, create text chunks of a certain token size required for the transformer
+            nested_sentences = create_nest_sentences(document = text_input, token_max_length = 1024)
 
-                summary = []
-                # st.markdown("### Text Chunk & Summaries")
-                st.markdown("_Breaks up the original text into sections with complete sentences totaling \
-                    less than 1024 tokens, a requirement for the summarizer._")
+            summary = []
+            # st.markdown("### Text Chunk & Summaries")
+            st.markdown("_Breaks up the original text into sections with complete sentences totaling \
+                less than 1024 tokens, a requirement for the summarizer. Each block of text is than summarized separately \
+                and then combined at the very end to generate the final summary._")
 
-                # For each chunk of sentences (within the token max), generate a summary
-                for n in range(0, len(nested_sentences)):
-                    text_chunk = " ".join(map(str, nested_sentences[n]))
-                    st.markdown(f"###### Original Text Chunk {n+1}/{len(nested_sentences)}" )
-                    st.markdown(text_chunk)
+            # For each chunk of sentences (within the token max), generate a summary
+            for n in range(0, len(nested_sentences)):
+                text_chunk = " ".join(map(str, nested_sentences[n]))
+                st.markdown(f"###### Original Text Chunk {n+1}/{len(nested_sentences)}" )
+                st.markdown(text_chunk)
 
-                    chunk_summary = summarizer_gen(summarizer, sequence=text_chunk, maximum_tokens = 300, minimum_tokens = 20)
-                    summary.append(chunk_summary) 
-                    st.markdown(f"###### Partial Summary {n+1}/{len(nested_sentences)}")
-                    st.markdown(chunk_summary)
-                    # Combine all the summaries into a list and compress into one document, again
-                    final_summary = " \n\n".join(list(summary))
+                chunk_summary = summarizer_gen(summarizer, sequence=text_chunk, maximum_tokens = 300, minimum_tokens = 20)
+                summary.append(chunk_summary) 
+                st.markdown(f"###### Partial Summary {n+1}/{len(nested_sentences)}")
+                st.markdown(chunk_summary)
+                # Combine all the summaries into a list and compress into one document, again
+                final_summary = " \n\n".join(list(summary))
 
         # final_summary = summarizer_gen(summarizer, sequence=text_input, maximum_tokens = 30, minimum_tokens = 100)
         st.markdown("### Combined Summary")
