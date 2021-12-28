@@ -1,6 +1,7 @@
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
 import streamlit as st
+from keybert import KeyBERT
 
 
 import spacy
@@ -28,6 +29,23 @@ def create_nest_sentences(document:str, token_max_length = 1024):
   if sent:
     nested.append(sent)
   return nested
+
+# Reference: https://github.com/MaartenGr/KeyBERT
+@st.cache(allow_output_mutation=True)
+def load_keyword_model():
+  kw_model = KeyBERT()
+  return ky_model
+
+def keyword_gen(sequence:str):
+  keywords = kw_model.extract_keywords(sequence, 
+    keyphrase_ngram_range=(1, 1),
+    stop_words='english', 
+    use_mmr=True, 
+    diversity=0.5,
+    top_n=10)
+  return keywords
+
+
 
 # Reference: https://huggingface.co/facebook/bart-large-mnli
 @st.cache(allow_output_mutation=True)

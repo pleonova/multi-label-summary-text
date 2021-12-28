@@ -8,7 +8,8 @@ import streamlit as st
 from sklearn.metrics import classification_report
 
 
-from models import create_nest_sentences, load_summary_model, summarizer_gen, load_model, classifier_zero
+# from models import create_nest_sentences, load_summary_model, summarizer_gen, load_model, classifier_zero
+import models as md
 from utils import plot_result, plot_dual_bar_chart, examples_load, example_long_text_load
 import json
 
@@ -46,12 +47,12 @@ with st.form(key='my_form'):
 
 with st.spinner('Loading pretrained summarizer mnli model...'):
     start = time.time()
-    summarizer = load_summary_model()   
+    summarizer = md.load_summary_model()   
     st.success(f'Time taken to load summarizer mnli model: {round(time.time() - start,4)} seconds')
 
 with st.spinner('Loading pretrained classifier mnli model...'):
     start = time.time()
-    classifier = load_model()    
+    classifier = md.load_model()    
     st.success(f'Time taken to load classifier mnli model: {round(time.time() - start,4)} seconds')
 
 
@@ -63,7 +64,7 @@ if submit_button:
         my_expander = st.expander(label='Expand to see summary generation details')
         with my_expander:
             # For each body of text, create text chunks of a certain token size required for the transformer
-            nested_sentences = create_nest_sentences(document = text_input, token_max_length = 1024)
+            nested_sentences = md.create_nest_sentences(document = text_input, token_max_length = 1024)
 
             summary = []
             # st.markdown("### Text Chunk & Summaries")
@@ -77,21 +78,21 @@ if submit_button:
                 st.markdown(f"###### Original Text Chunk {n+1}/{len(nested_sentences)}" )
                 st.markdown(text_chunk)
 
-                chunk_summary = summarizer_gen(summarizer, sequence=text_chunk, maximum_tokens = 300, minimum_tokens = 20)
+                chunk_summary = md.summarizer_gen(summarizer, sequence=text_chunk, maximum_tokens = 300, minimum_tokens = 20)
                 summary.append(chunk_summary) 
                 st.markdown(f"###### Partial Summary {n+1}/{len(nested_sentences)}")
                 st.markdown(chunk_summary)
                 # Combine all the summaries into a list and compress into one document, again
                 final_summary = " \n\n".join(list(summary))
 
-        # final_summary = summarizer_gen(summarizer, sequence=text_input, maximum_tokens = 30, minimum_tokens = 100)
+        # final_summary = md.summarizer_gen(summarizer, sequence=text_input, maximum_tokens = 30, minimum_tokens = 100)
         st.markdown("### Combined Summary")
         st.markdown(final_summary)
     
 
         st.markdown("### Top Label Predictions on Summary & Full Text")
         with st.spinner('Matching labels...'):
-            topics, scores = classifier_zero(classifier, sequence=final_summary, labels=labels, multi_class=True)
+            topics, scores = md.classifier_zero(classifier, sequence=final_summary, labels=labels, multi_class=True)
             # st.markdown("### Top Label Predictions: Combined Summary")
             # plot_result(topics[::-1][:], scores[::-1][:])
             # st.markdown("### Download Data")
@@ -103,7 +104,7 @@ if submit_button:
             #     unsafe_allow_html = True
             #     )
 
-            topics_ex_text, scores_ex_text = classifier_zero(classifier, sequence=example_text, labels=labels, multi_class=True)
+            topics_ex_text, scores_ex_text = md.classifier_zero(classifier, sequence=example_text, labels=labels, multi_class=True)
             plot_dual_bar_chart(topics, scores, topics_ex_text, scores_ex_text)
 
             data_ex_text = pd.DataFrame({'label': topics_ex_text, 'scores_from_full_text': scores_ex_text})
