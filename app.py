@@ -24,24 +24,30 @@ st.write("__Inputs__: User enters their own custom text and labels.")
 st.write("__Outputs__: A summary of the text, likelihood percentages for each label and a downloadable csv of the results. \
     Includes additional options to generate a list of keywords and/or evaluate results against a list of ground truth labels, if available.")
 
-with st.form(key='my_form'):
+example_button = st.button(label='See Example')
+if example_button:
     example_text = ex_long_text #ex_text
     display_text = 'Excerpt from Frankenstein:' + example_text + '"\n\n' + "[This is an excerpt from Project Gutenberg's Frankenstein. " + ex_license + "]"
+    input_labels = ex_labels
+    input_glabels = ex_glabels
+else:
+    display_text = ''
+    input_labels = ''
+    input_glabels = ''
+
+
+with st.form(key='my_form'):
     text_input = st.text_area("Input any text you want to summarize & classify here (keep in mind very long text will take a while to process):", display_text)
-
-    if text_input == display_text:
-        text_input = example_text
-
+    
     gen_keywords = st.radio(
         "Generate keywords from text?",
         ('Yes', 'No')
         )
 
-    # labels = st.text_input('Enter possible topic labels, which can be either keywords and/or general themes (comma-separated). The output will be the likelihood that these labels represent the text.:',ex_labels, max_chars=1000)
-    labels = st.text_input('Enter possible topic labels, which can be either keywords and/or general themes (comma-separated):',ex_labels, max_chars=1000)
+    labels = st.text_input('Enter possible topic labels, which can be either keywords and/or general themes (comma-separated):',input_labels, max_chars=1000)
     labels = list(set([x.strip() for x in labels.strip().split(',') if len(x.strip()) > 0]))
     
-    glabels = st.text_input('If available, enter ground truth topic labels to evaluate results, otherwise leave blank (comma-separated):',ex_glabels, max_chars=1000)
+    glabels = st.text_input('If available, enter ground truth topic labels to evaluate results, otherwise leave blank (comma-separated):',input_glabels, max_chars=1000)
     glabels = list(set([x.strip() for x in glabels.strip().split(',') if len(x.strip()) > 0]))
 
     threshold_value = st.slider(
@@ -49,7 +55,6 @@ with st.form(key='my_form'):
          0.0, 1.0, (0.5))
 
     submit_button = st.form_submit_button(label='Submit')
-
 
 
 with st.spinner('Loading pretrained models...'):
@@ -67,9 +72,10 @@ with st.spinner('Loading pretrained models...'):
 
     st.success(f'Time taken to load KeyBERT model: {k_time}s & BART summarizer mnli model: {s_time}s & BART classifier mnli model: {c_time}s')
 
-if submit_button:
+
+if submit_button or example_button:
     if len(text_input) == 0:
-        st.write("Enter some text to generate a summary")
+        st.error("Enter some text to generate a summary")
     else:
         with st.spinner('Breaking up text into more reasonable chunks (tranformers cannot exceed a 1024 token max)...'):  
             # For each body of text, create text chunks of a certain token size required for the transformer
@@ -119,7 +125,7 @@ if submit_button:
             st.markdown(final_summary)
 
     if len(text_input) == 0 or len(labels) == 0:
-        st.write('Enter some text and at least one possible topic to see predictions.')
+        st.error('Enter some text and at least one possible topic to see label predictions.')
     else:
         st.markdown("### Top Label Predictions on Summary vs Full Text")
         with st.spinner('Matching labels...'):
