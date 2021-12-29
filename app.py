@@ -32,6 +32,11 @@ with st.form(key='my_form'):
     if text_input == display_text:
         text_input = example_text
 
+    gen_keywords = st.radio(
+        "Generate keywords from text?",
+        ('Yes', 'No')
+        )
+
     labels = st.text_input('Enter possible labels (comma-separated):',ex_labels, max_chars=1000)
     labels = list(set([x.strip() for x in labels.strip().split(',') if len(x.strip()) > 0]))
     
@@ -45,51 +50,76 @@ with st.form(key='my_form'):
     submit_button = st.form_submit_button(label='Submit')
 
 
-with st.spinner('Loading pretrained summarizer mnli model...'):
+
+with st.spinner('Loading pretrained summarizer and classifier mnli model...'):
     start = time.time()
     summarizer = md.load_summary_model()   
-    st.success(f'Time taken to load summarizer mnli model: {round(time.time() - start,4)} seconds')
+    s_time = round(time.time() - start,4)
 
-with st.spinner('Loading pretrained classifier mnli model...'):
     start = time.time()
-    classifier = md.load_model()    
-    st.success(f'Time taken to load classifier mnli model: {round(time.time() - start,4)} seconds')
+    classifier = md.load_model()  
+    c_time = round(time.time() - start,4)
+
+    st.success(f'Time taken to load: summarizer mnli model {s_time}s & classifier mnli model {c_time}s')
+
+# with st.spinner('Loading pretrained classifier mnli model...'):
+#     start = time.time()
+#     classifier = md.load_model()    
+#     st.success(f'Time taken to load classifier mnli model: {round(time.time() - start,4)} seconds')
 
 
 if submit_button:
-    if len(labels) == 0:
-        st.write('Enter some text and at least one possible topic to see predictions.')
-    
-    with st.spinner('Generating summaries and matching labels...'):
-        my_expander = st.expander(label='Expand to see summary generation details')
-        with my_expander:
+    if len(text_input) == 0:
+        st.write("Enter some text to generate a summary")
+    else:
+        with st.spinner('Breaking up text into more reasonable chunks (tranformers cannot exceed a 1024 token max)...'):  
             # For each body of text, create text chunks of a certain token size required for the transformer
             nested_sentences = md.create_nest_sentences(document = text_input, token_max_length = 1024)
+                    # For each chunk of sentences (within the token max)
+        text_chunks = []
+        for n in range(0, len(nested_sentences)):
+            tc = " ".join(map(str, nested_sentences[n]))
+            text_chunks.append(tc)
+ 
+        with st.spinner('Generating summaries for text chunks...'):
 
-            summary = []
-            # st.markdown("### Text Chunk & Summaries")
-            st.markdown("_Breaks up the original text into sections with complete sentences totaling \
-                less than 1024 tokens, a requirement for the summarizer. Each block of text is than summarized separately \
-                and then combined at the very end to generate the final summary._")
+            my_expander = st.expander(label='Expand to see summary generation details')
+            with my_expander:
+                summary = []
+                st.markdown("### Text Chunk & Summaries")
+                # st.markdown("_Breaks up the original text into sections with complete sentences totaling \
+                #     less than 1024 tokens, a requirement for the summarizer. Each block of text is than summarized separately \
+                #     and then combined at the very end to generate the final summary._")
 
-            # For each chunk of sentences (within the token max), generate a summary
-            for n in range(0, len(nested_sentences)):
-                text_chunk = " ".join(map(str, nested_sentences[n]))
-                st.markdown(f"###### Original Text Chunk {n+1}/{len(nested_sentences)}" )
-                st.markdown(text_chunk)
+                # # For each chunk of sentences (within the token max), generate a summary
+                # for n in range(0, len(nested_sentences)):
+                #     text_chunk = " ".join(map(str, nested_sentences[n]))
+                #     st.markdown(f"###### Original Text Chunk {n+1}/{len(nested_sentences)}" )
+                #     st.markdown(text_chunk)
 
-                chunk_summary = md.summarizer_gen(summarizer, sequence=text_chunk, maximum_tokens = 300, minimum_tokens = 20)
-                summary.append(chunk_summary) 
-                st.markdown(f"###### Partial Summary {n+1}/{len(nested_sentences)}")
-                st.markdown(chunk_summary)
-                # Combine all the summaries into a list and compress into one document, again
-                final_summary = " \n\n".join(list(summary))
+                for num_chunk, text_chunk in enumerate(text_chunks):
+                    st.markdown(f"###### Original Text Chunk {num_chunk+1}/{len(text_chunks)}" )
+                    st.markdown(text_chunk)
 
-        # final_summary = md.summarizer_gen(summarizer, sequence=text_input, maximum_tokens = 30, minimum_tokens = 100)
-        st.markdown("### Combined Summary")
-        st.markdown(final_summary)
-    
+                    chunk_summary = md.summarizer_gen(summarizer, sequence=text_chunk, maximum_tokens = 300, minimum_tokens = 20)
+                    summary.append(chunk_summary) 
+                    st.markdown(f"###### Partial Summary {num_chunk+1}/{len(text_chunks)}")
+                    st.markdown(chunk_summary)
+                    # Combine all the summaries into a list and compress into one document, again
+                    final_summary = " \n\n".join(list(summary))
 
+            # final_summary = md.summarizer_gen(summarizer, sequence=text_input, maximum_tokens = 30, minimum_tokens = 100)
+            st.markdown("### Combined Summary")
+            st.markdown(final_summary)
+
+    # if gen_keywords == 'Yes':
+    #     st.markdown("### Top Keywords")
+    #     with st.spinner("Generating keywords from text...")
+    #         keywords = 
+
+    if len(text_input) == 0 or len(labels) == 0:
+        st.write('Enter some text and at least one possible topic to see predictions.')
+    else:
         st.markdown("### Top Label Predictions on Summary & Full Text")
         with st.spinner('Matching labels...'):
             topics, scores = md.classifier_zero(classifier, sequence=final_summary, labels=labels, multi_class=True)
@@ -146,7 +176,7 @@ if submit_button:
                     section_header_description = ['Summary Label Performance', 'Original Full Text Label Performance']
                     data_headers = ['scores_from_summary', 'scores_from_full_text']
                     for i in range(0,2):
-                        st.markdown(f"##### {section_header_description[i]}")
+                        st.markdown(f"###### {section_header_description[i]}")
                         report = classification_report(y_true = data2[['is_true_label']], 
                             y_pred = (data2[[data_headers[i]]] >= threshold_value) * 1.0,
                             output_dict=True)
@@ -154,5 +184,5 @@ if submit_button:
                         st.markdown(f"Threshold set for: {threshold_value}")
                         st.dataframe(df_report)
 
-            st.success('All done!')
-            st.balloons()
+        st.success('All done!')
+        st.balloons()
