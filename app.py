@@ -59,6 +59,7 @@ with st.form(key='my_form'):
 
     submit_button = st.form_submit_button(label='Submit')
 
+st.write("_For improvments/suggestions, please file an issue here: https://github.com/pleonova/multi-label-summary-text_")
 
 with st.spinner('Loading pretrained models...'):
     start = time.time()
