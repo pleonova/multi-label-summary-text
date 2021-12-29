@@ -18,7 +18,7 @@ ex_long_text = example_long_text_load()
 
 
 # if __name__ == '__main__':
-st.header("Summzarization & Multi-label Classification for Long Text")
+st.markdown("### Long Text Summarization & Multi-Label Classification")
 st.write("This app summarizes and then classifies your long text with multiple labels.")
 st.write("__Inputs__: User enters their own custom text and labels.")
 st.write("__Outputs__: A summary of the text, likelihood percentages for each label and a downloadable csv of the results. \
@@ -37,6 +37,7 @@ with st.form(key='my_form'):
         ('Yes', 'No')
         )
 
+    # labels = st.text_input('Enter possible topic labels, which can be either keywords and/or general themes (comma-separated). The output will be the likelihood that these labels represent the text.:',ex_labels, max_chars=1000)
     labels = st.text_input('Enter possible topic labels, which can be either keywords and/or general themes (comma-separated):',ex_labels, max_chars=1000)
     labels = list(set([x.strip() for x in labels.strip().split(',') if len(x.strip()) > 0]))
     
