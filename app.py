@@ -51,7 +51,7 @@ with st.form(key='my_form'):
 
 
 
-with st.spinner('Loading pretrained summarizer and classifier mnli model...'):
+with st.spinner('Loading pretrained models...'):
     start = time.time()
     summarizer = md.load_summary_model()   
     s_time = round(time.time() - start,4)
@@ -60,13 +60,11 @@ with st.spinner('Loading pretrained summarizer and classifier mnli model...'):
     classifier = md.load_model()  
     c_time = round(time.time() - start,4)
 
-    st.success(f'Time taken to load: summarizer mnli model {s_time}s & classifier mnli model {c_time}s')
+    start = time.time()
+    kw_model = md.load_keyword_model()
+    k_time = round(time.time() - start,4)
 
-# with st.spinner('Loading pretrained classifier mnli model...'):
-#     start = time.time()
-#     classifier = md.load_model()    
-#     st.success(f'Time taken to load classifier mnli model: {round(time.time() - start,4)} seconds')
-
+    st.success(f'Time taken to load BART summarizer mnli model: {s_time}s & BART classifier mnli model: {c_time}s & KeyBERT model: {k_time}s')
 
 if submit_button:
     if len(text_input) == 0:
@@ -80,22 +78,31 @@ if submit_button:
         for n in range(0, len(nested_sentences)):
             tc = " ".join(map(str, nested_sentences[n]))
             text_chunks.append(tc)
+
+        if gen_keywords == 'Yes':
+            st.markdown("### Top Keywords")
+            with st.spinner("Generating keywords from text..."):
+
+                kw_df = pd.DataFrame()
+                for text_chunk in text_chunks:
+                    keywords_list = md.keyword_gen(kw_model, text_chunk)
+                    kw_df = kw_df.append(pd.DataFrame(keywords_list))
+                kw_df.columns = ['keyword', 'score']
+                top_kw_df = kw_df.groupby('keyword')['score'].max().reset_index()
+
+                top_kw_df = top_kw_df.sort_values('score', ascending = False).reset_index().drop(['index'], axis=1)
+                st.dataframe(top_kw_df.head(10))
  
+        st.markdown("### Text Chunk & Summaries")
         with st.spinner('Generating summaries for text chunks...'):
 
-            my_expander = st.expander(label='Expand to see summary generation details')
+            my_expander = st.expander(label='Expand to see intermediate summary generation details')
             with my_expander:
                 summary = []
-                st.markdown("### Text Chunk & Summaries")
-                # st.markdown("_Breaks up the original text into sections with complete sentences totaling \
-                #     less than 1024 tokens, a requirement for the summarizer. Each block of text is than summarized separately \
-                #     and then combined at the very end to generate the final summary._")
-
-                # # For each chunk of sentences (within the token max), generate a summary
-                # for n in range(0, len(nested_sentences)):
-                #     text_chunk = " ".join(map(str, nested_sentences[n]))
-                #     st.markdown(f"###### Original Text Chunk {n+1}/{len(nested_sentences)}" )
-                #     st.markdown(text_chunk)
+                
+                st.markdown("_The original text is broken into chunks with complete sentences totaling \
+                    fewer than 1024 tokens, a requirement for the summarizer. Each block of text is then summarized separately \
+                    and then combined at the very end to generate the final summary._")
 
                 for num_chunk, text_chunk in enumerate(text_chunks):
                     st.markdown(f"###### Original Text Chunk {num_chunk+1}/{len(text_chunks)}" )
@@ -108,14 +115,8 @@ if submit_button:
                     # Combine all the summaries into a list and compress into one document, again
                     final_summary = " \n\n".join(list(summary))
 
-            # final_summary = md.summarizer_gen(summarizer, sequence=text_input, maximum_tokens = 30, minimum_tokens = 100)
             st.markdown("### Combined Summary")
             st.markdown(final_summary)
-
-    # if gen_keywords == 'Yes':
-    #     st.markdown("### Top Keywords")
-    #     with st.spinner("Generating keywords from text...")
-    #         keywords = 
 
     if len(text_input) == 0 or len(labels) == 0:
         st.write('Enter some text and at least one possible topic to see predictions.')

@@ -34,9 +34,9 @@ def create_nest_sentences(document:str, token_max_length = 1024):
 @st.cache(allow_output_mutation=True)
 def load_keyword_model():
   kw_model = KeyBERT()
-  return ky_model
+  return kw_model
 
-def keyword_gen(sequence:str):
+def keyword_gen(kw_model, sequence:str):
   keywords = kw_model.extract_keywords(sequence, 
     keyphrase_ngram_range=(1, 1),
     stop_words='english', 
