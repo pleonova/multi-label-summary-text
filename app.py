@@ -95,9 +95,9 @@ if submit_button:
                 st.dataframe(top_kw_df.head(10))
  
         st.markdown("### Text Chunk & Summaries")
-        with st.spinner('Generating summaries for text chunks...'):
+        with st.spinner(f'Generating summaries for {len(text_chunks)} text chunks (this may take a minute)...'):
 
-            my_expander = st.expander(label='Expand to see intermediate summary generation details')
+            my_expander = st.expander(label=f'Expand to see intermediate summary generation details for {len(text_chunks)} text chunks')
             with my_expander:
                 summary = []
                 
