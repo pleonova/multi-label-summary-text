@@ -100,8 +100,8 @@ if submit_button:
             with my_expander:
                 summary = []
                 
-                st.markdown("_The original text is broken into chunks with complete sentences totaling \
-                    fewer than 1024 tokens, a requirement for the summarizer. Each block of text is then summarized separately \
+                st.markdown("_Once the original text is broken into smaller chunks (totaling no more than 1024 tokens, \
+                    with complete setences), each block of text is then summarized separately using BART NLI \
                     and then combined at the very end to generate the final summary._")
 
                 for num_chunk, text_chunk in enumerate(text_chunks):
