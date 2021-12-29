@@ -94,7 +94,7 @@ if submit_button:
                 top_kw_df = top_kw_df.sort_values('score', ascending = False).reset_index().drop(['index'], axis=1)
                 st.dataframe(top_kw_df.head(10))
  
-        st.markdown("### Text Chunk & Summaries")
+        st.markdown("### Summary")
         with st.spinner(f'Generating summaries for {len(text_chunks)} text chunks (this may take a minute)...'):
 
             my_expander = st.expander(label=f'Expand to see intermediate summary generation details for {len(text_chunks)} text chunks')
@@ -116,7 +116,6 @@ if submit_button:
                     # Combine all the summaries into a list and compress into one document, again
                     final_summary = " \n\n".join(list(summary))
 
-            st.markdown("### Combined Summary")
             st.markdown(final_summary)
 
     if len(text_input) == 0 or len(labels) == 0:
