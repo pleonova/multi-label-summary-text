@@ -121,7 +121,7 @@ if submit_button:
     if len(text_input) == 0 or len(labels) == 0:
         st.write('Enter some text and at least one possible topic to see predictions.')
     else:
-        st.markdown("### Top Label Predictions on Summary & Full Text")
+        st.markdown("### Top Label Predictions on Summary vs Full Text")
         with st.spinner('Matching labels...'):
             topics, scores = md.classifier_zero(classifier, sequence=final_summary, labels=labels, multi_class=True)
             # st.markdown("### Top Label Predictions: Combined Summary")
