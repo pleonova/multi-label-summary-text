@@ -44,6 +44,9 @@ with st.form(key='my_form'):
         ('Yes', 'No')
         )
 
+    if text_input == display_text and display_text != '':
+        text_input = example_text
+
     labels = st.text_input('Enter possible topic labels, which can be either keywords and/or general themes (comma-separated):',input_labels, max_chars=1000)
     labels = list(set([x.strip() for x in labels.strip().split(',') if len(x.strip()) > 0]))
     
