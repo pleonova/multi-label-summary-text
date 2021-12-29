@@ -22,11 +22,11 @@ st.header("Summzarization & Multi-label Classification for Long Text")
 st.write("This app summarizes and then classifies your long text with multiple labels.")
 st.write("__Inputs__: User enters their own custom text and labels.")
 st.write("__Outputs__: A summary of the text, likelihood percentages for each label and a downloadable csv of the results. \
-    Option to evaluate results against a list of ground truth labels, if available.")
+    Includes additional options to generate a list of keywords and/or evaluate results against a list of ground truth labels, if available.")
 
 with st.form(key='my_form'):
     example_text = ex_long_text #ex_text
-    display_text = "[Excerpt from Project Gutenberg: Frankenstein]\n" + example_text + "\n\n" + ex_license
+    display_text = 'Excerpt from Frankenstein:' + example_text + '"\n\n' + "[This is an excerpt from Project Gutenberg's Frankenstein. " + ex_license + "]"
     text_input = st.text_area("Input any text you want to summarize & classify here (keep in mind very long text will take a while to process):", display_text)
 
     if text_input == display_text:
@@ -37,10 +37,10 @@ with st.form(key='my_form'):
         ('Yes', 'No')
         )
 
-    labels = st.text_input('Enter possible labels (comma-separated):',ex_labels, max_chars=1000)
+    labels = st.text_input('Enter possible topic labels, which can be either keywords and/or general themes (comma-separated):',ex_labels, max_chars=1000)
     labels = list(set([x.strip() for x in labels.strip().split(',') if len(x.strip()) > 0]))
     
-    glabels = st.text_input('If available, enter ground truth labels to evaluate results, otherwise leave blank (comma-separated):',ex_glabels, max_chars=1000)
+    glabels = st.text_input('If available, enter ground truth topic labels to evaluate results, otherwise leave blank (comma-separated):',ex_glabels, max_chars=1000)
     glabels = list(set([x.strip() for x in glabels.strip().split(',') if len(x.strip()) > 0]))
 
     threshold_value = st.slider(
@@ -64,7 +64,7 @@ with st.spinner('Loading pretrained models...'):
     kw_model = md.load_keyword_model()
     k_time = round(time.time() - start,4)
 
-    st.success(f'Time taken to load BART summarizer mnli model: {s_time}s & BART classifier mnli model: {c_time}s & KeyBERT model: {k_time}s')
+    st.success(f'Time taken to load KeyBERT model: {k_time}s & BART summarizer mnli model: {s_time}s & BART classifier mnli model: {c_time}s')
 
 if submit_button:
     if len(text_input) == 0:
