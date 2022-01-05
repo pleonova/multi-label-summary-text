@@ -145,7 +145,7 @@ if submit_button or example_button:
             #     unsafe_allow_html = True
             #     )
 
-            topics_ex_text, scores_ex_text = md.classifier_zero(classifier, sequence=example_text, labels=labels, multi_class=True)
+            topics_ex_text, scores_ex_text = md.classifier_zero(classifier, sequence=text_input, labels=labels, multi_class=True)
             plot_dual_bar_chart(topics, scores, topics_ex_text, scores_ex_text)
 
             data_ex_text = pd.DataFrame({'label': topics_ex_text, 'scores_from_full_text': scores_ex_text})
