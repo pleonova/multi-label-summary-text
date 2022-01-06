@@ -19,7 +19,7 @@ ex_long_text = example_long_text_load()
 
 # if __name__ == '__main__':
 st.markdown("### Long Text Summarization & Multi-Label Classification")
-st.write("This app summarizes and then classifies your long text with multiple labels.")
+st.write("This app summarizes and then classifies your long text with multiple labels using [BART Large MNLI](https://huggingface.co/facebook/bart-large-mnli). The keywords are generated using [KeyBERT](https://github.com/MaartenGr/KeyBERT).")
 st.write("__Inputs__: User enters their own custom text and labels.")
 st.write("__Outputs__: A summary of the text, likelihood percentages for each label and a downloadable csv of the results. \
     Includes additional options to generate a list of keywords and/or evaluate results against a list of ground truth labels, if available.")
@@ -74,7 +74,7 @@ with st.spinner('Loading pretrained models...'):
     kw_model = md.load_keyword_model()
     k_time = round(time.time() - start,4)
 
-    st.success(f'Time taken to load KeyBERT model: {k_time}s & BART summarizer mnli model: {s_time}s & BART classifier mnli model: {c_time}s')
+    st.success(f'Time taken to load various models: {k_time}s for KeyBERT model & {s_time}s for BART summarizer mnli model & {c_time}s for BART classifier mnli model.')
 
 
 if submit_button or example_button:
