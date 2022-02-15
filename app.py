@@ -36,9 +36,19 @@ else:
     input_glabels = ''
 
 
+
 with st.form(key='my_form'):
-    text_input = st.text_area("Input any text you want to summarize & classify here (keep in mind very long text will take a while to process):", display_text)
-    
+    text_input_method = st.radio(
+        "Text Input Method",
+        ('Free form text', 'CSV')
+        )
+
+    if text_input_method == "Free form text":
+        text_input = st.text_area("Input any text you want to summarize & classify here (keep in mind very long text will take a while to process):", display_text)
+    else:
+        uploaded_file = st.file_uploader("Choose a CSV file",
+                                         help='Upload a CSV file with the following columns: ID, Text')
+
     gen_keywords = st.radio(
         "Generate keywords from text?",
         ('Yes', 'No')
@@ -81,7 +91,7 @@ if submit_button or example_button:
     if len(text_input) == 0:
         st.error("Enter some text to generate a summary")
     else:
-        with st.spinner('Breaking up text into more reasonable chunks (tranformers cannot exceed a 1024 token max)...'):  
+        with st.spinner('Breaking up text into more reasonable chunks (transformers cannot exceed a 1024 token max)...'):
             # For each body of text, create text chunks of a certain token size required for the transformer
             nested_sentences = md.create_nest_sentences(document = text_input, token_max_length = 1024)
                     # For each chunk of sentences (within the token max)
