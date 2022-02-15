@@ -42,7 +42,7 @@ with st.form(key='my_form'):
 
     text_csv_expander = st.expander(label=f'Want to upload multiple texts at once? Expand to upload your text files below.', expanded=False)
     with text_csv_expander:
-        uploaded_text_file = st.file_uploader(label="Upload file(s) that end with the .txt suffix",
+        uploaded_text_files = st.file_uploader(label="Upload file(s) that end with the .txt suffix",
                                               accept_multiple_files=True,
                                               type = 'txt')
 
@@ -107,9 +107,24 @@ with st.spinner('Loading pretrained models...'):
 
 
 if submit_button or example_button:
-    if len(text_input) == 0:
+    if len(text_input) == 0 and uploaded_text_files is None:
         st.error("Enter some text to generate a summary")
     else:
+
+        if uploaded_text_files is not None:
+            file_names = []
+            raw_texts = []
+            for uploaded_file in uploaded_text_files:
+                text = str(uploaded_file.read(), "utf-8")
+                raw_texts.append(text)
+                file_names.append(uploaded_file.name)
+                # st.write("filename:", uploaded_file.name)
+                # st.write(raw_text)
+            text_data = pd.DataFrame({'title': file_names,
+                                      'text': raw_texts})
+            st.dataframe(text_data.head())
+
+
         with st.spinner('Breaking up text into more reasonable chunks (transformers cannot exceed a 1024 token max)...'):
             # For each body of text, create text chunks of a certain token size required for the transformer
             nested_sentences = md.create_nest_sentences(document = text_input, token_max_length = 1024)
