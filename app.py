@@ -19,8 +19,8 @@ ex_long_text = example_long_text_load()
 
 # if __name__ == '__main__':
 st.markdown("### Long Text Summarization & Multi-Label Classification")
-st.write("This app summarizes and then classifies your long text with multiple labels using [BART Large MNLI](https://huggingface.co/facebook/bart-large-mnli). The keywords are generated using [KeyBERT](https://github.com/MaartenGr/KeyBERT).")
-st.write("__Inputs__: User enters their own custom text and labels.")
+st.write("This app summarizes and then classifies your long text(s) with multiple labels using [BART Large MNLI](https://huggingface.co/facebook/bart-large-mnli). The keywords are generated using [KeyBERT](https://github.com/MaartenGr/KeyBERT).")
+st.write("__Inputs__: User enters their own custom text(s) and labels.")
 st.write("__Outputs__: A summary of the text, likelihood percentages for each label and a downloadable csv of the results. \
     Includes additional options to generate a list of keywords and/or evaluate results against a list of ground truth labels, if available.")
 
@@ -110,16 +110,19 @@ with st.spinner('Loading pretrained models...'):
     kw_model = md.load_keyword_model()
     k_time = round(time.time() - start,4)
 
-    st.success(f'Time taken to load various models: {k_time}s for KeyBERT model & {s_time}s for BART summarizer mnli model & {c_time}s for BART classifier mnli model.')
-
+    st.spinner(f'Time taken to load various models: {k_time}s for KeyBERT model & {s_time}s for BART summarizer mnli model & {c_time}s for BART classifier mnli model.')
+    # st.success(None)
 
 if submit_button or example_button:
     if len(text_input) == 0 and uploaded_text_files is None and uploaded_csv_text_files is None:
         st.error("Enter some text to generate a summary")
     else:
 
+        if len(text_input) != 0:
+            text_df = pd.DataFrame.from_dict({'title': ['sample'], 'text': [text_input]})
+
         # OPTION A:
-        if uploaded_text_files is not None:
+        elif uploaded_text_files is not None:
             st.markdown("### Text Inputs")
             st.write('Files concatenated into a dataframe:')
             file_names = []
@@ -139,6 +142,10 @@ if submit_button or example_button:
                 mime='title_text/csv',
             )
         # OPTION B: [TO DO: DIRECT CSV UPLOAD INSTEAD]
+
+
+        if len(text_input) != 0:
+            text_df = pd.DataFrame.from_dict({'title': ['sample'], 'text': [text_input]})
 
 
         with st.spinner('Breaking up text into more reasonable chunks (transformers cannot exceed a 1024 token max)...'):
@@ -165,17 +172,22 @@ if submit_button or example_button:
                 for text_chunk in text_chunks_lib[key]:
                     keywords_list = md.keyword_gen(kw_model, text_chunk)
                     kw_dict[key] = dict(keywords_list)
-
+            # Display as a dataframe
             kw_df0 = pd.DataFrame.from_dict(kw_dict).reset_index()
             kw_df0.rename(columns={'index': 'keyword'}, inplace=True)
             kw_df = pd.melt(kw_df0, id_vars=['keyword'], var_name='title', value_name='score').dropna()
-            kw_df = kw_df[kw_df['score'] > 0.1][['title', 'keyword', 'score']].reset_index().drop(columns='index').sort_values(['title', 'score'], ascending=False)
+            if len(text_input) != 0:
+                title_element = []
+            else:
+                title_element = ['title']
+            kw_column_list = ['keyword', 'score']
+            kw_df = kw_df[kw_df['score'] > 0.1][title_element + kw_column_list].sort_values(title_element + ['score'], ascending=False).reset_index().drop(columns='index')
             st.dataframe(kw_df)
             st.download_button(
                 label="Download data as CSV",
                 data=kw_df.to_csv().encode('utf-8'),
-                file_name='title_kewyords.csv',
-                mime='title_kewyords/csv',
+                file_name='title_keywords.csv',
+                mime='title_keywords/csv',
             )
 
  
