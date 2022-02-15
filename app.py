@@ -42,11 +42,12 @@ with st.form(key='my_form'):
 
     text_csv_expander = st.expander(label=f'Want to upload multiple texts at once? Expand to upload your text files below.', expanded=False)
     with text_csv_expander:
-        st.write("Option A:")
+        st.markdown('##### Choose one of the options below:')
+        st.write("__Option A:__")
         uploaded_text_files = st.file_uploader(label="Upload file(s) that end with the .txt suffix",
                                               accept_multiple_files=True, key = 'text_uploader',
                                               type = 'txt')
-        st.write("Option B:")
+        st.write("__Option B:__")
         uploaded_csv_text_files = st.file_uploader(label='Upload a CSV file with columns: "title" and "text"',
                                                    accept_multiple_files=False, key = 'csv_text_uploader',
                                                    type = 'csv')
@@ -57,12 +58,12 @@ with st.form(key='my_form'):
 
     st.text("\n\n\n")
     st.markdown("##### Step 2: Enter Labels")
-    labels = st.text_input('Enter possible topic labels, which can be either keywords and/or general themes (comma-separated):',input_labels, max_chars=1000)
+    labels = st.text_input('Enter possible topic labels, which can be either keywords and/or general themes (comma-separated):',input_labels, max_chars=2000)
     labels = list(set([x.strip() for x in labels.strip().split(',') if len(x.strip()) > 0]))
 
     labels_csv_expander = st.expander(label=f'Prefer to upload a list of labels instead? Click here to upload your CSV file.',expanded=False)
     with labels_csv_expander:
-        uploaded_labels_file = st.file_uploader("Or Choose a CSV file with one column and no header, where each cell is a separate label",
+        uploaded_labels_file = st.file_uploader("Choose a CSV file with one column and no header, where each cell is a separate label",
                                                 key='labels_uploader')
 
     gen_keywords = st.radio(
@@ -72,16 +73,17 @@ with st.form(key='my_form'):
 
     st.text("\n\n\n")
     st.markdown("##### Step 3: Provide Ground Truth Labels (_Optional_)")
-    glabels = st.text_input('If available, enter ground truth topic labels to evaluate results, otherwise leave blank (comma-separated):',input_glabels, max_chars=1000)
+    glabels = st.text_input('If available, enter ground truth topic labels to evaluate results, otherwise leave blank (comma-separated):',input_glabels, max_chars=2000)
     glabels = list(set([x.strip() for x in glabels.strip().split(',') if len(x.strip()) > 0]))
 
 
     glabels_csv_expander = st.expander(label=f'Have a file with labels for the text? Click here to upload your CSV file.', expanded=False)
     with glabels_csv_expander:
-        st.write("Option A:")
+        st.markdown('##### Choose one of the options below:')
+        st.write("__Option A:__")
         uploaded_onetext_glabels_file = st.file_uploader("Choose a CSV file with one column and no header, where each cell is a separate label",
                                                          key = 'onetext_glabels_uploader')
-        st.write("Option B:")
+        st.write("__Option B:__")
         uploaded_multitext_glabels_file = st.file_uploader('Or Choose a CSV file with two columns "title" and "label", with the cells in the title column matching the name of the files uploaded in step #1.',
                                                            key = 'multitext_glabels_uploader')
 
@@ -116,8 +118,10 @@ if submit_button or example_button:
         st.error("Enter some text to generate a summary")
     else:
 
+        # OPTION A:
         if uploaded_text_files is not None:
             st.markdown("### Text Inputs")
+            st.write('Files concatenated into a dataframe:')
             file_names = []
             raw_texts = []
             for uploaded_file in uploaded_text_files:
@@ -125,63 +129,79 @@ if submit_button or example_button:
                 raw_texts.append(text)
                 title_file_name = uploaded_file.name.replace('.txt','')
                 file_names.append(title_file_name)
-            text_data = pd.DataFrame({'title': file_names,
+            text_df = pd.DataFrame({'title': file_names,
                                       'text': raw_texts})
-            st.dataframe(text_data.head())
+            st.dataframe(text_df.head())
             st.download_button(
                 label="Download data as CSV",
-                data=text_data.to_csv().encode('utf-8'),
-                file_name='title_text_data.csv',
+                data=text_df.to_csv().encode('utf-8'),
+                file_name='title_text.csv',
                 mime='title_text/csv',
             )
+        # OPTION B: [TO DO: DIRECT CSV UPLOAD INSTEAD]
 
 
         with st.spinner('Breaking up text into more reasonable chunks (transformers cannot exceed a 1024 token max)...'):
             # For each body of text, create text chunks of a certain token size required for the transformer
-            nested_sentences = md.create_nest_sentences(document = text_input, token_max_length = 1024)
-                    # For each chunk of sentences (within the token max)
-        text_chunks = []
-        for n in range(0, len(nested_sentences)):
-            tc = " ".join(map(str, nested_sentences[n]))
-            text_chunks.append(tc)
 
-        if gen_keywords == 'Yes':
-            st.markdown("### Top Keywords")
-            with st.spinner("Generating keywords from text..."):
+            text_chunks_lib = dict()
+            for i in range(0, len(text_df)):
+                nested_sentences = md.create_nest_sentences(document=text_df['text'][i], token_max_length=1024)
 
-                kw_df = pd.DataFrame()
-                for text_chunk in text_chunks:
+                # For each chunk of sentences (within the token max)
+                text_chunks = []
+                for n in range(0, len(nested_sentences)):
+                    tc = " ".join(map(str, nested_sentences[n]))
+                    text_chunks.append(tc)
+                title_entry = text_df['title'][i]
+                text_chunks_lib[title_entry] = text_chunks
+
+    if gen_keywords == 'Yes':
+        st.markdown("### Top Keywords")
+        with st.spinner("Generating keywords from text..."):
+
+            kw_dict = dict()
+            for key in text_chunks_lib:
+                for text_chunk in text_chunks_lib[key]:
                     keywords_list = md.keyword_gen(kw_model, text_chunk)
-                    kw_df = kw_df.append(pd.DataFrame(keywords_list))
-                kw_df.columns = ['keyword', 'score']
-                top_kw_df = kw_df.groupby('keyword')['score'].max().reset_index()
+                    kw_dict[key] = dict(keywords_list)
 
-                top_kw_df = top_kw_df.sort_values('score', ascending = False).reset_index().drop(['index'], axis=1)
-                st.dataframe(top_kw_df.head(10))
+            kw_df0 = pd.DataFrame.from_dict(kw_dict).reset_index()
+            kw_df0.rename(columns={'index': 'keyword'}, inplace=True)
+            kw_df = pd.melt(kw_df0, id_vars=['keyword'], var_name='title', value_name='score').dropna()
+            kw_df = kw_df[kw_df['score'] > 0.1][['title', 'keyword', 'score']].reset_index().drop(columns='index').sort_values(['title', 'score'], ascending=False)
+            st.dataframe(kw_df)
+            st.download_button(
+                label="Download data as CSV",
+                data=kw_df.to_csv().encode('utf-8'),
+                file_name='title_kewyords.csv',
+                mime='title_kewyords/csv',
+            )
+
  
-        st.markdown("### Summary")
-        with st.spinner(f'Generating summaries for {len(text_chunks)} text chunks (this may take a minute)...'):
+    st.markdown("### Summary")
+    with st.spinner(f'Generating summaries for {len(text_chunks)} text chunks (this may take a minute)...'):
 
-            my_expander = st.expander(label=f'Expand to see intermediate summary generation details for {len(text_chunks)} text chunks')
-            with my_expander:
-                summary = []
-                
-                st.markdown("_Once the original text is broken into smaller chunks (totaling no more than 1024 tokens, \
-                    with complete sentences), each block of text is then summarized separately using BART NLI \
-                    and then combined at the very end to generate the final summary._")
+        my_expander = st.expander(label=f'Expand to see intermediate summary generation details for {len(text_chunks)} text chunks')
+        with my_expander:
+            summary = []
 
-                for num_chunk, text_chunk in enumerate(text_chunks):
-                    st.markdown(f"###### Original Text Chunk {num_chunk+1}/{len(text_chunks)}" )
-                    st.markdown(text_chunk)
+            st.markdown("_Once the original text is broken into smaller chunks (totaling no more than 1024 tokens, \
+                with complete sentences), each block of text is then summarized separately using BART NLI \
+                and then combined at the very end to generate the final summary._")
 
-                    chunk_summary = md.summarizer_gen(summarizer, sequence=text_chunk, maximum_tokens = 300, minimum_tokens = 20)
-                    summary.append(chunk_summary) 
-                    st.markdown(f"###### Partial Summary {num_chunk+1}/{len(text_chunks)}")
-                    st.markdown(chunk_summary)
-                    # Combine all the summaries into a list and compress into one document, again
-                    final_summary = " \n\n".join(list(summary))
+            for num_chunk, text_chunk in enumerate(text_chunks):
+                st.markdown(f"###### Original Text Chunk {num_chunk+1}/{len(text_chunks)}" )
+                st.markdown(text_chunk)
 
-            st.markdown(final_summary)
+                chunk_summary = md.summarizer_gen(summarizer, sequence=text_chunk, maximum_tokens = 300, minimum_tokens = 20)
+                summary.append(chunk_summary)
+                st.markdown(f"###### Partial Summary {num_chunk+1}/{len(text_chunks)}")
+                st.markdown(chunk_summary)
+                # Combine all the summaries into a list and compress into one document, again
+                final_summary = " \n\n".join(list(summary))
+
+        st.markdown(final_summary)
 
     if len(text_input) == 0 or len(labels) == 0:
         st.error('Enter some text and at least one possible topic to see label predictions.')
