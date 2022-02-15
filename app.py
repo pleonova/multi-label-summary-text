@@ -36,32 +36,51 @@ else:
     input_glabels = ''
 
 
-
 with st.form(key='my_form'):
-    text_input_method = st.radio(
-        "Text Input Method",
-        ('Free form text', 'CSV')
-        )
+    st.markdown("##### Step 1: Upload Text")
+    text_input = st.text_area("Input any text you want to summarize & classify here (keep in mind very long text will take a while to process):", display_text)
 
-    if text_input_method == "Free form text":
-        text_input = st.text_area("Input any text you want to summarize & classify here (keep in mind very long text will take a while to process):", display_text)
-    else:
-        uploaded_file = st.file_uploader("Choose a CSV file",
-                                         help='Upload a CSV file with the following columns: ID, Text')
-
-    gen_keywords = st.radio(
-        "Generate keywords from text?",
-        ('Yes', 'No')
-        )
+    text_csv_expander = st.expander(label=f'Want to upload multiple texts at once? Expand to upload your text files below.', expanded=False)
+    with text_csv_expander:
+        uploaded_text_file = st.file_uploader(label="Upload file(s) that end with the .txt suffix",
+                                              accept_multiple_files=True,
+                                              type = 'txt')
 
     if text_input == display_text and display_text != '':
         text_input = example_text
 
+
+    st.text("\n\n\n")
+    st.markdown("##### Step 2: Enter Labels")
     labels = st.text_input('Enter possible topic labels, which can be either keywords and/or general themes (comma-separated):',input_labels, max_chars=1000)
     labels = list(set([x.strip() for x in labels.strip().split(',') if len(x.strip()) > 0]))
-    
+
+    labels_csv_expander = st.expander(label=f'Prefer to upload a list of labels instead? Click here to upload your CSV file.',expanded=False)
+    with labels_csv_expander:
+        uploaded_labels_file = st.file_uploader("Choose a CSV file with one column and no header, where each cell is a separate label",
+                                                key='labels_uploader')
+
+    gen_keywords = st.radio(
+        "Generate keywords from text (independent from the above labels)?",
+        ('Yes', 'No')
+        )
+
+    st.text("\n\n\n")
+    st.markdown("##### Step 3: Provide Ground Truth Labels (_Optional_)")
     glabels = st.text_input('If available, enter ground truth topic labels to evaluate results, otherwise leave blank (comma-separated):',input_glabels, max_chars=1000)
     glabels = list(set([x.strip() for x in glabels.strip().split(',') if len(x.strip()) > 0]))
+
+
+    glabels_csv_expander = st.expander(label=f'Have a file with labels for the text? Click here to upload your CSV file.', expanded=False)
+    with glabels_csv_expander:
+        st.write("Option A:")
+        uploaded_onetext_glabels_file = st.file_uploader("Choose a CSV file with one column and no header, where each cell is a separate label",
+                                                         key = 'onetext_glabels_uplaoder')
+        st.write("Option B:")
+        uploaded_multitext_glabels_file = st.file_uploader('Choose a CSV file with two columns "title" and "label", with the cells in the title column matching the name of the files uploaded in step #1.',
+                                                           key = 'multitext_glabels_uplaoder')
+
+
 
     threshold_value = st.slider(
          'Select a threshold cutoff for matching percentage (used for ground truth label evaluation)',
@@ -122,7 +141,7 @@ if submit_button or example_button:
                 summary = []
                 
                 st.markdown("_Once the original text is broken into smaller chunks (totaling no more than 1024 tokens, \
-                    with complete setences), each block of text is then summarized separately using BART NLI \
+                    with complete sentences), each block of text is then summarized separately using BART NLI \
                     and then combined at the very end to generate the final summary._")
 
                 for num_chunk, text_chunk in enumerate(text_chunks):
