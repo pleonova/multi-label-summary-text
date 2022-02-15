@@ -184,7 +184,7 @@ if submit_button or example_button:
             else:
                 title_element = ['title']
             kw_column_list = ['keyword', 'score']
-            kw_df = kw_df[kw_df['score'] > 0.1][title_element + kw_column_list].sort_values(title_element + ['score'], ascending=False).reset_index().drop(columns='index')
+            kw_df = kw_df[kw_df['score'] > 0.25][title_element + kw_column_list].sort_values(title_element + ['score'], ascending=False).reset_index().drop(columns='index')
             st.dataframe(kw_df)
             st.download_button(
                 label="Download data as CSV",
