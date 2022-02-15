@@ -168,9 +168,12 @@ if submit_button or example_button:
         with st.spinner("Generating keywords from text..."):
 
             kw_dict = dict()
+            text_chunk_counter = 0
             for key in text_chunks_lib:
+                keywords_list = []
                 for text_chunk in text_chunks_lib[key]:
-                    keywords_list = md.keyword_gen(kw_model, text_chunk)
+                    text_chunk_counter += 1
+                    keywords_list += md.keyword_gen(kw_model, text_chunk)
                     kw_dict[key] = dict(keywords_list)
             # Display as a dataframe
             kw_df0 = pd.DataFrame.from_dict(kw_dict).reset_index()
@@ -192,10 +195,10 @@ if submit_button or example_button:
 
  
     st.markdown("### Summary")
-    with st.spinner(f'Generating summaries for {len(text_chunks)} text chunks (this may take a minute)...'):
+    with st.spinner(f'Generating summaries for {text_chunk_counter} text chunks (this may take a minute)...'):
 
-        my_expander = st.expander(label=f'Expand to see intermediate summary generation details for {len(text_chunks)} text chunks')
-        with my_expander:
+        my_summary_expander = st.expander(label=f'Expand to see intermediate summary generation details for {len(text_chunks)} text chunks')
+        with my_summary_expander:
             summary = []
 
             st.markdown("_Once the original text is broken into smaller chunks (totaling no more than 1024 tokens, \
