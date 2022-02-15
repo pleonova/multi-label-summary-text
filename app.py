@@ -42,9 +42,14 @@ with st.form(key='my_form'):
 
     text_csv_expander = st.expander(label=f'Want to upload multiple texts at once? Expand to upload your text files below.', expanded=False)
     with text_csv_expander:
+        st.write("Option A:")
         uploaded_text_files = st.file_uploader(label="Upload file(s) that end with the .txt suffix",
-                                              accept_multiple_files=True,
+                                              accept_multiple_files=True, key = 'text_uploader',
                                               type = 'txt')
+        st.write("Option B:")
+        uploaded_csv_text_files = st.file_uploader(label='Upload a CSV file with columns: "title" and "text"',
+                                                   accept_multiple_files=False, key = 'csv_text_uploader',
+                                                   type = 'csv')
 
     if text_input == display_text and display_text != '':
         text_input = example_text
@@ -57,7 +62,7 @@ with st.form(key='my_form'):
 
     labels_csv_expander = st.expander(label=f'Prefer to upload a list of labels instead? Click here to upload your CSV file.',expanded=False)
     with labels_csv_expander:
-        uploaded_labels_file = st.file_uploader("Choose a CSV file with one column and no header, where each cell is a separate label",
+        uploaded_labels_file = st.file_uploader("Or Choose a CSV file with one column and no header, where each cell is a separate label",
                                                 key='labels_uploader')
 
     gen_keywords = st.radio(
@@ -75,10 +80,10 @@ with st.form(key='my_form'):
     with glabels_csv_expander:
         st.write("Option A:")
         uploaded_onetext_glabels_file = st.file_uploader("Choose a CSV file with one column and no header, where each cell is a separate label",
-                                                         key = 'onetext_glabels_uplaoder')
+                                                         key = 'onetext_glabels_uploader')
         st.write("Option B:")
-        uploaded_multitext_glabels_file = st.file_uploader('Choose a CSV file with two columns "title" and "label", with the cells in the title column matching the name of the files uploaded in step #1.',
-                                                           key = 'multitext_glabels_uplaoder')
+        uploaded_multitext_glabels_file = st.file_uploader('Or Choose a CSV file with two columns "title" and "label", with the cells in the title column matching the name of the files uploaded in step #1.',
+                                                           key = 'multitext_glabels_uploader')
 
 
 
@@ -107,22 +112,28 @@ with st.spinner('Loading pretrained models...'):
 
 
 if submit_button or example_button:
-    if len(text_input) == 0 and uploaded_text_files is None:
+    if len(text_input) == 0 and uploaded_text_files is None and uploaded_csv_text_files is None:
         st.error("Enter some text to generate a summary")
     else:
 
         if uploaded_text_files is not None:
+            st.markdown("### Text Inputs")
             file_names = []
             raw_texts = []
             for uploaded_file in uploaded_text_files:
                 text = str(uploaded_file.read(), "utf-8")
                 raw_texts.append(text)
-                file_names.append(uploaded_file.name)
-                # st.write("filename:", uploaded_file.name)
-                # st.write(raw_text)
+                title_file_name = uploaded_file.name.replace('.txt','')
+                file_names.append(title_file_name)
             text_data = pd.DataFrame({'title': file_names,
                                       'text': raw_texts})
             st.dataframe(text_data.head())
+            st.download_button(
+                label="Download data as CSV",
+                data=text_data.to_csv().encode('utf-8'),
+                file_name='title_text_data.csv',
+                mime='title_text/csv',
+            )
 
 
         with st.spinner('Breaking up text into more reasonable chunks (transformers cannot exceed a 1024 token max)...'):
