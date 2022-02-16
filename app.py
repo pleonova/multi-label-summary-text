@@ -48,7 +48,7 @@ with st.form(key='my_form'):
                                               accept_multiple_files=True, key = 'text_uploader',
                                               type = 'txt')
         st.write("__Option B:__")
-        uploaded_csv_text_files = st.file_uploader(label='Upload a CSV file with columns: "title" and "text"',
+        uploaded_csv_text_files = st.file_uploader(label='Upload a CSV file with two columns: "title" and "text"',
                                                    accept_multiple_files=False, key = 'csv_text_uploader',
                                                    type = 'csv')
 
@@ -145,7 +145,7 @@ if submit_button or example_button:
 
 
         if len(text_input) != 0:
-            text_df = pd.DataFrame.from_dict({'title': ['sample'], 'text': [text_input]})
+            text_df = pd.DataFrame.from_dict({'title': ['Submitted Text'], 'text': [text_input]})
 
 
         with st.spinner('Breaking up text into more reasonable chunks (transformers cannot exceed a 1024 token max)...'):
@@ -185,6 +185,7 @@ if submit_button or example_button:
                 title_element = ['title']
             kw_column_list = ['keyword', 'score']
             kw_df = kw_df[kw_df['score'] > 0.25][title_element + kw_column_list].sort_values(title_element + ['score'], ascending=False).reset_index().drop(columns='index')
+
             st.dataframe(kw_df)
             st.download_button(
                 label="Download data as CSV",
@@ -195,30 +196,38 @@ if submit_button or example_button:
 
  
     st.markdown("### Summary")
-    with st.spinner(f'Generating summaries for {text_chunk_counter} text chunks (this may take a minute)...'):
+    with st.spinner(f'Generating summaries for {len(text_df)} texts consisting of a total of {text_chunk_counter} chunks (this may take a minute)...'):
+        sum_dict = dict()
+        for i, key in enumerate(text_chunks_lib):
+            with st.expander(label=f'({i+1}/{len(text_df)}) Expand to see intermediate summary generation details for: {key}', expanded=False):
+                # for key in text_chunks_lib:
+                summary = []
+                for num_chunk, text_chunk in enumerate(text_chunks_lib[key]):
+                    chunk_summary = md.summarizer_gen(summarizer, sequence=text_chunk, maximum_tokens=300, minimum_tokens=20)
+                    summary.append(chunk_summary)
 
-        my_summary_expander = st.expander(label=f'Expand to see intermediate summary generation details for {len(text_chunks)} text chunks')
-        with my_summary_expander:
-            summary = []
+                    st.markdown(f"###### Original Text Chunk {num_chunk+1}/{len(text_chunks)}" )
+                    st.markdown(text_chunk)
+                    st.markdown(f"###### Partial Summary {num_chunk+1}/{len(text_chunks)}")
+                    st.markdown(chunk_summary)
 
-            st.markdown("_Once the original text is broken into smaller chunks (totaling no more than 1024 tokens, \
-                with complete sentences), each block of text is then summarized separately using BART NLI \
-                and then combined at the very end to generate the final summary._")
+                    # Combine all the summaries into a list and compress into one document, again
+                    final_summary = "\n\n".join(list(summary))
+                    sum_dict[key] = [final_summary]
 
-            for num_chunk, text_chunk in enumerate(text_chunks):
-                st.markdown(f"###### Original Text Chunk {num_chunk+1}/{len(text_chunks)}" )
-                st.markdown(text_chunk)
+        sum_df = pd.DataFrame.from_dict(sum_dict).reset_index().T
+        # sum_df.columns = ['title', 'summary_text']
 
-                chunk_summary = md.summarizer_gen(summarizer, sequence=text_chunk, maximum_tokens = 300, minimum_tokens = 20)
-                summary.append(chunk_summary)
-                st.markdown(f"###### Partial Summary {num_chunk+1}/{len(text_chunks)}")
-                st.markdown(chunk_summary)
-                # Combine all the summaries into a list and compress into one document, again
-                final_summary = " \n\n".join(list(summary))
+    st.dataframe(sum_df)
+    st.download_button(
+        label="Download data as CSV",
+        data=sum_df.to_csv().encode('utf-8'),
+        file_name='title_summary.csv',
+        mime='title_summary/csv',
+    )
 
-        st.markdown(final_summary)
-
-    if len(text_input) == 0 or len(labels) == 0:
+    if (len(text_input) == 0 or len(labels) == 0
+            or uploaded_labels_file is None or uploaded_text_files is None or uploaded_csv_text_files is None):
         st.error('Enter some text and at least one possible topic to see label predictions.')
     else:
         st.markdown("### Top Label Predictions on Summary vs Full Text")
