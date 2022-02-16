@@ -21,7 +21,7 @@ ex_long_text = example_long_text_load()
 st.markdown("### Long Text Summarization & Multi-Label Classification")
 st.write("This app summarizes and then classifies your long text(s) with multiple labels using [BART Large MNLI](https://huggingface.co/facebook/bart-large-mnli). The keywords are generated using [KeyBERT](https://github.com/MaartenGr/KeyBERT).")
 st.write("__Inputs__: User enters their own custom text(s) and labels.")
-st.write("__Outputs__: A summary of the text, likelihood percentages for each label and a downloadable csv of the results. \
+st.write("__Outputs__: A summary of the text, likelihood match score for each label and a downloadable csv of the results. \
     Includes additional options to generate a list of keywords and/or evaluate results against a list of ground truth labels, if available.")
 
 example_button = st.button(label='See Example')
@@ -75,33 +75,27 @@ with st.form(key='my_form'):
         uploaded_labels_file = st.file_uploader("Choose a CSV file with one column and no header, where each cell is a separate label",
                                                 key='labels_uploader')
 
-    # summary_option = st.multiselect(
-    #     "Match labels to text using?",
-    #     ['Summary', 'Full Text'],
-    #     ['Summary', 'Full Text']
-    #     )
-
     st.text("\n\n\n")
     st.markdown("##### Step 3: Provide Ground Truth Labels (_Optional_)")
     glabels = st.text_input('If available, enter ground truth topic labels to evaluate results, otherwise leave blank (comma-separated):',input_glabels, max_chars=2000)
     glabels = list(set([x.strip() for x in glabels.strip().split(',') if len(x.strip()) > 0]))
 
 
-    glabels_csv_expander = st.expander(label=f'Have a file with labels for the text? Click here to upload your CSV file.', expanded=False)
-    with glabels_csv_expander:
-        st.markdown('##### Choose one of the options below:')
-        st.write("__Option A:__")
-        uploaded_onetext_glabels_file = st.file_uploader("Choose a CSV file with one column and no header, where each cell is a separate label",
-                                                         key = 'onetext_glabels_uploader')
-        st.write("__Option B:__")
-        uploaded_multitext_glabels_file = st.file_uploader('Or Choose a CSV file with two columns "title" and "label", with the cells in the title column matching the name of the files uploaded in step #1.',
-                                                           key = 'multitext_glabels_uploader')
+    # glabels_csv_expander = st.expander(label=f'Have a file with labels for the text? Click here to upload your CSV file.', expanded=False)
+    # with glabels_csv_expander:
+    #     st.markdown('##### Choose one of the options below:')
+    #     st.write("__Option A:__")
+    #     uploaded_onetext_glabels_file = st.file_uploader("Single Text: Choose a CSV file with one column and no header, where each cell is a separate label",
+    #                                                      key = 'onetext_glabels_uploader')
+    #     st.write("__Option B:__")
+    #     uploaded_multitext_glabels_file = st.file_uploader('Multiple Text: Choose a CSV file with two columns "title" and "label", with the cells in the title column matching the name of the files uploaded in step #1.',
+    #                                                        key = 'multitext_glabels_uploader')
+    #
 
 
-
-    threshold_value = st.slider(
-         'Select a threshold cutoff for matching percentage (used for ground truth label evaluation)',
-         0.0, 1.0, (0.5))
+    # threshold_value = st.slider(
+    #      'Select a threshold cutoff for matching percentage (used for ground truth label evaluation)',
+    #      0.0, 1.0, (0.5))
 
     submit_button = st.form_submit_button(label='Submit')
 
@@ -205,8 +199,9 @@ if submit_button or example_button:
             )
 
  
-    st.markdown("### Summary")
+
     if gen_summary == 'Yes':
+        st.markdown("### Summary")
         with st.spinner(f'Generating summaries for {len(text_df)} texts consisting of a total of {text_chunk_counter} chunks (this may take a minute)...'):
             sum_dict = dict()
             for i, key in enumerate(text_chunks_lib):
@@ -274,24 +269,24 @@ if submit_button or example_button:
                 labels_full_df = pd.concat([labels_full_df, lf_df[labels_full_col_list]])
 
                 with st.expander(f'({i+1}/{len(text_df)}) See intermediate label matching results'):
-                    st.write(f"Results for {text_df['title'][i]}")
+                    st.write(f"Results for: {text_df['title'][i]}")
                     if gen_summary == 'Yes':
                         st.dataframe(pd.merge(labels_sum_df, labels_full_df, on=['title','label']))
                     else:
                         st.dataframe(labels_full_df)
 
             if gen_summary == 'Yes':
-                label_match_df = pd.merge(labels_sum_df, labels_full_df, on=['title','label'])
+                label_match_df = pd.merge(labels_sum_df, labels_full_df, on=title_element + ['label'])
             else:
                 label_match_df = labels_full_df.copy()
 
-            # TO DO: ADD Flexibility for csv import
+            # TO DO: ADD Flexibility for csv import and multiple texts
             if len(glabels) > 0:
                 gdata = pd.DataFrame({'label': glabels})
-                gdata['is_true_label'] = True
+                gdata['correct_match'] = True
             
-                label_match_df = pd.merge(label_match_df, gdata, how = 'left', on = title_element + ['label'])
-                label_match_df['correct_match'].fillna(0, inplace = True)
+                label_match_df = pd.merge(label_match_df, gdata, how = 'left', on = ['label'])
+                label_match_df['correct_match'].fillna(False, inplace=True)
 
             st.dataframe(label_match_df)
             st.download_button(
@@ -302,20 +297,20 @@ if submit_button or example_button:
             )
 
 
-            if len(glabels) > 0:
-                st.markdown("### Evaluation Metrics")
-                with st.spinner('Evaluating output against ground truth...'):
-
-                    section_header_description = ['Summary Label Performance', 'Original Full Text Label Performance']
-                    data_headers = ['scores_from_summary', 'scores_from_full_text']
-                    for i in range(0,2):
-                        st.markdown(f"###### {section_header_description[i]}")
-                        report = classification_report(y_true = data2[['is_true_label']], 
-                            y_pred = (data2[[data_headers[i]]] >= threshold_value) * 1.0,
-                            output_dict=True)
-                        df_report = pd.DataFrame(report).transpose()
-                        st.markdown(f"Threshold set for: {threshold_value}")
-                        st.dataframe(df_report)
+            # if len(glabels) > 0:
+            #     st.markdown("### Evaluation Metrics")
+            #     with st.spinner('Evaluating output against ground truth...'):
+            #
+            #         section_header_description = ['Summary Label Performance', 'Original Full Text Label Performance']
+            #         data_headers = ['scores_from_summary', 'scores_from_full_text']
+            #         for i in range(0,2):
+            #             st.markdown(f"###### {section_header_description[i]}")
+            #             report = classification_report(y_true = data2[['is_true_label']],
+            #                 y_pred = (data2[[data_headers[i]]] >= threshold_value) * 1.0,
+            #                 output_dict=True)
+            #             df_report = pd.DataFrame(report).transpose()
+            #             st.markdown(f"Threshold set for: {threshold_value}")
+            #             st.dataframe(df_report)
 
         st.success('All done!')
-        st.balloons()
+        # st.balloons()
