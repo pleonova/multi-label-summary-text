@@ -217,6 +217,7 @@ if submit_button or example_button:
 
         sum_df = pd.DataFrame.from_dict(sum_dict).T.reset_index()
         sum_df.columns = ['title', 'summary_text']
+        # TO DO: Make sure summary_text does not exceed the token length
 
     st.dataframe(sum_df)
     st.download_button(
@@ -226,30 +227,47 @@ if submit_button or example_button:
         mime='title_summary/csv',
     )
 
-    if ((len(text_input) == 0 and uploaded_text_files is None or uploaded_csv_text_files is None)
+    if ((len(text_input) == 0 and uploaded_text_files is None and uploaded_csv_text_files is None)
             or (len(labels) == 0 and uploaded_labels_file is None)):
         st.error('Enter some text and at least one possible topic to see label predictions.')
     else:
         st.markdown("### Top Label Predictions on Summary vs Full Text")
+
+        if uploaded_labels_file is not None:
+            labels_df = pd.read_csv(uploaded_labels_file)
+            label_list = labels_df.iloc[:, 0]
+        else:
+            label_list = labels
+        st.write(label_list)
+
         with st.spinner('Matching labels...'):
-            topics, scores = md.classifier_zero(classifier, sequence=final_summary, labels=labels, multi_class=True)
-            # st.markdown("### Top Label Predictions: Combined Summary")
-            # plot_result(topics[::-1][:], scores[::-1][:])
-            # st.markdown("### Download Data")
-            data = pd.DataFrame({'label': topics, 'scores_from_summary': scores})
-            # st.dataframe(data)
-            # coded_data = base64.b64encode(data.to_csv(index = False). encode ()).decode()
-            # st.markdown(
-            #     f'<a href="data:file/csv;base64, {coded_data}" download = "data.csv">Download Data</a>',
-            #     unsafe_allow_html = True
-            #     )
 
-            topics_ex_text, scores_ex_text = md.classifier_zero(classifier, sequence=text_input, labels=labels, multi_class=True)
-            plot_dual_bar_chart(topics, scores, topics_ex_text, scores_ex_text)
+            labels_sum_col_list = ['title', 'label', 'scores_from_summary']
+            labels_sum_df = pd.DataFrame(columns=labels_sum_col_list)
 
-            data_ex_text = pd.DataFrame({'label': topics_ex_text, 'scores_from_full_text': scores_ex_text})
-            
-            data2 = pd.merge(data, data_ex_text, on = ['label'])
+            labels_full_col_list = ['title', 'label', 'scores_from_full_text']
+            labels_full_df = pd.DataFrame(columns=labels_full_col_list)
+
+            for i in range(0, len(text_df)):
+
+                s_topics, s_scores = md.classifier_zero(classifier, sequence=sum_df['summary_text'][i], labels=label_list, multi_class=True)
+                ls_df = pd.DataFrame({'label': s_topics, 'scores_from_summary': s_scores})
+                ls_df['title'] = text_df['title'][i]
+                labels_sum_df = pd.concat([labels_sum_df, ls_df[labels_sum_col_list]])
+
+                f_topics, f_scores = md.classifier_zero(classifier, sequence=text_df['text'][i], labels=label_list, multi_class=True)
+                lf_df = pd.DataFrame({'label': f_topics, 'scores_from_full_text': f_scores})
+                lf_df['title'] = text_df['title'][i]
+                labels_full_df = pd.concat([labels_full_df, lf_df[labels_full_col_list]])
+
+            label_match_df = pd.merge(labels_sum_df, labels_full_df, on=['title','label'])
+            st.dataframe(label_match_df)
+            st.download_button(
+                label="Download data as CSV",
+                data=label_match_df.to_csv().encode('utf-8'),
+                file_name='title_label_sum_full.csv',
+                mime='title_label_sum_full/csv',
+            )
 
             if len(glabels) > 0:
                 gdata = pd.DataFrame({'label': glabels})
