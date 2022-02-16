@@ -155,6 +155,11 @@ if submit_button or example_button:
         elif uploaded_csv_text_files is not None:
             text_df = pd.read_csv(uploaded_csv_text_files)
 
+        # Which input was used? If text area was used, ignore the 'title'
+        if len(text_input) != 0:
+            title_element = []
+        else:
+            title_element = ['title']
 
         with st.spinner('Breaking up text into more reasonable chunks (transformers cannot exceed a 1024 token max)...'):
             # For each body of text, create text chunks of a certain token size required for the transformer
@@ -187,10 +192,7 @@ if submit_button or example_button:
             kw_df0 = pd.DataFrame.from_dict(kw_dict).reset_index()
             kw_df0.rename(columns={'index': 'keyword'}, inplace=True)
             kw_df = pd.melt(kw_df0, id_vars=['keyword'], var_name='title', value_name='score').dropna()
-            if len(text_input) != 0:
-                title_element = []
-            else:
-                title_element = ['title']
+
             kw_column_list = ['keyword', 'score']
             kw_df = kw_df[kw_df['score'] > 0.25][title_element + kw_column_list].sort_values(title_element + ['score'], ascending=False).reset_index().drop(columns='index')
 
@@ -283,6 +285,14 @@ if submit_button or example_button:
             else:
                 label_match_df = labels_full_df.copy()
 
+            # TO DO: ADD Flexibility for csv import
+            if len(glabels) > 0:
+                gdata = pd.DataFrame({'label': glabels})
+                gdata['is_true_label'] = True
+            
+                label_match_df = pd.merge(label_match_df, gdata, how = 'left', on = title_element + ['label'])
+                label_match_df['correct_match'].fillna(0, inplace = True)
+
             st.dataframe(label_match_df)
             st.download_button(
                 label="Download data as CSV",
@@ -291,33 +301,6 @@ if submit_button or example_button:
                 mime='title_label_sum_full/csv',
             )
 
-            if len(glabels) > 0:
-                gdata = pd.DataFrame({'label': glabels})
-                gdata['is_true_label'] = int(1)           
-            
-                data2 = pd.merge(data2, gdata, how = 'left', on = ['label'])
-                data2['is_true_label'].fillna(0, inplace = True)
-
-            st.markdown("### Data Table")
-            with st.spinner('Generating a table of results and a download link...'):
-                st.dataframe(data2)
-
-                @st.cache
-                def convert_df(df):
-                     # IMPORTANT: Cache the conversion to prevent computation on every rerun
-                     return df.to_csv().encode('utf-8')
-                csv = convert_df(data2)
-                st.download_button(
-                     label="Download data as CSV",
-                     data=csv,
-                     file_name='text_labels.csv',
-                     mime='text/csv',
-                 )
-                # coded_data = base64.b64encode(data2.to_csv(index = False). encode ()).decode()
-                # st.markdown(
-                #     f'<a href="data:file/csv;base64, {coded_data}" download = "data.csv">Click here to download the data</a>',
-                #     unsafe_allow_html = True
-                #     )
 
             if len(glabels) > 0:
                 st.markdown("### Evaluation Metrics")
