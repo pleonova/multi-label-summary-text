@@ -46,15 +46,24 @@ with st.form(key='my_form'):
         st.write("__Option A:__")
         uploaded_text_files = st.file_uploader(label="Upload file(s) that end with the .txt suffix",
                                               accept_multiple_files=True, key = 'text_uploader',
-                                              type = 'txt')
+                                              type='txt')
         st.write("__Option B:__")
         uploaded_csv_text_files = st.file_uploader(label='Upload a CSV file with two columns: "title" and "text"',
                                                    accept_multiple_files=False, key = 'csv_text_uploader',
-                                                   type = 'csv')
+                                                   type='csv')
 
     if text_input == display_text and display_text != '':
         text_input = example_text
 
+    gen_keywords = st.radio(
+        "Generate keywords from text? (independent from the input labels below)",
+        ('Yes', 'No')
+        )
+
+    gen_summary = st.radio(
+        "Generate summary from text? (recommended for label matching below, but will take longer)",
+        ('Yes', 'No')
+        )
 
     st.text("\n\n\n")
     st.markdown("##### Step 2: Enter Labels")
@@ -66,10 +75,11 @@ with st.form(key='my_form'):
         uploaded_labels_file = st.file_uploader("Choose a CSV file with one column and no header, where each cell is a separate label",
                                                 key='labels_uploader')
 
-    gen_keywords = st.radio(
-        "Generate keywords from text (independent from the above labels)?",
-        ('Yes', 'No')
-        )
+    # summary_option = st.multiselect(
+    #     "Match labels to text using?",
+    #     ['Summary', 'Full Text'],
+    #     ['Summary', 'Full Text']
+    #     )
 
     st.text("\n\n\n")
     st.markdown("##### Step 3: Provide Ground Truth Labels (_Optional_)")
@@ -119,9 +129,9 @@ if submit_button or example_button:
     else:
 
         if len(text_input) != 0:
-            text_df = pd.DataFrame.from_dict({'title': ['sample'], 'text': [text_input]})
+            text_df = pd.DataFrame.from_dict({'title': ['Submitted Text'], 'text': [text_input]})
 
-        # OPTION A:
+        # OPTION A
         elif uploaded_text_files is not None:
             st.markdown("### Text Inputs")
             st.write('Files concatenated into a dataframe:')
@@ -141,11 +151,9 @@ if submit_button or example_button:
                 file_name='title_text.csv',
                 mime='title_text/csv',
             )
-        # OPTION B: [TO DO: DIRECT CSV UPLOAD INSTEAD]
-
-
-        if len(text_input) != 0:
-            text_df = pd.DataFrame.from_dict({'title': ['Submitted Text'], 'text': [text_input]})
+        # OPTION B
+        elif uploaded_csv_text_files is not None:
+            text_df = pd.read_csv(uploaded_csv_text_files)
 
 
         with st.spinner('Breaking up text into more reasonable chunks (transformers cannot exceed a 1024 token max)...'):
@@ -196,71 +204,85 @@ if submit_button or example_button:
 
  
     st.markdown("### Summary")
-    with st.spinner(f'Generating summaries for {len(text_df)} texts consisting of a total of {text_chunk_counter} chunks (this may take a minute)...'):
-        sum_dict = dict()
-        for i, key in enumerate(text_chunks_lib):
-            with st.expander(label=f'({i+1}/{len(text_df)}) Expand to see intermediate summary generation details for: {key}', expanded=False):
-                # for key in text_chunks_lib:
-                summary = []
-                for num_chunk, text_chunk in enumerate(text_chunks_lib[key]):
-                    chunk_summary = md.summarizer_gen(summarizer, sequence=text_chunk, maximum_tokens=300, minimum_tokens=20)
-                    summary.append(chunk_summary)
+    if gen_summary == 'Yes':
+        with st.spinner(f'Generating summaries for {len(text_df)} texts consisting of a total of {text_chunk_counter} chunks (this may take a minute)...'):
+            sum_dict = dict()
+            for i, key in enumerate(text_chunks_lib):
+                with st.expander(label=f'({i+1}/{len(text_df)}) Expand to see intermediate summary generation details for: {key}', expanded=False):
+                    # for key in text_chunks_lib:
+                    summary = []
+                    for num_chunk, text_chunk in enumerate(text_chunks_lib[key]):
+                        chunk_summary = md.summarizer_gen(summarizer, sequence=text_chunk, maximum_tokens=300, minimum_tokens=20)
+                        summary.append(chunk_summary)
 
-                    st.markdown(f"###### Original Text Chunk {num_chunk+1}/{len(text_chunks)}" )
-                    st.markdown(text_chunk)
-                    st.markdown(f"###### Partial Summary {num_chunk+1}/{len(text_chunks)}")
-                    st.markdown(chunk_summary)
+                        st.markdown(f"###### Original Text Chunk {num_chunk+1}/{len(text_chunks)}" )
+                        st.markdown(text_chunk)
+                        st.markdown(f"###### Partial Summary {num_chunk+1}/{len(text_chunks)}")
+                        st.markdown(chunk_summary)
 
-                    # Combine all the summaries into a list and compress into one document, again
-                    final_summary = "\n\n".join(list(summary))
-                    sum_dict[key] = [final_summary]
+                        # Combine all the summaries into a list and compress into one document, again
+                        final_summary = "\n\n".join(list(summary))
+                        sum_dict[key] = [final_summary]
 
-        sum_df = pd.DataFrame.from_dict(sum_dict).T.reset_index()
-        sum_df.columns = ['title', 'summary_text']
-        # TO DO: Make sure summary_text does not exceed the token length
+            sum_df = pd.DataFrame.from_dict(sum_dict).T.reset_index()
+            sum_df.columns = ['title', 'summary_text']
+            # TO DO: Make sure summary_text does not exceed the token length
 
-    st.dataframe(sum_df)
-    st.download_button(
-        label="Download data as CSV",
-        data=sum_df.to_csv().encode('utf-8'),
-        file_name='title_summary.csv',
-        mime='title_summary/csv',
+        st.dataframe(sum_df)
+        st.download_button(
+            label="Download data as CSV",
+            data=sum_df.to_csv().encode('utf-8'),
+            file_name='title_summary.csv',
+            mime='title_summary/csv',
     )
 
     if ((len(text_input) == 0 and uploaded_text_files is None and uploaded_csv_text_files is None)
             or (len(labels) == 0 and uploaded_labels_file is None)):
         st.error('Enter some text and at least one possible topic to see label predictions.')
     else:
-        st.markdown("### Top Label Predictions on Summary vs Full Text")
+        if gen_summary == 'Yes':
+            st.markdown("### Top Label Predictions on Summary vs Full Text")
+        else:
+            st.markdown("### Top Label Predictions on Full Text")
 
         if uploaded_labels_file is not None:
-            labels_df = pd.read_csv(uploaded_labels_file)
+            labels_df = pd.read_csv(uploaded_labels_file, header=None)
             label_list = labels_df.iloc[:, 0]
         else:
             label_list = labels
-        st.write(label_list)
 
-        with st.spinner('Matching labels...'):
-
-            labels_sum_col_list = ['title', 'label', 'scores_from_summary']
-            labels_sum_df = pd.DataFrame(columns=labels_sum_col_list)
+        with st.spinner('Matching labels...(may take some time)'):
+            if gen_summary == 'Yes':
+                labels_sum_col_list = ['title', 'label', 'scores_from_summary']
+                labels_sum_df = pd.DataFrame(columns=labels_sum_col_list)
 
             labels_full_col_list = ['title', 'label', 'scores_from_full_text']
             labels_full_df = pd.DataFrame(columns=labels_full_col_list)
 
             for i in range(0, len(text_df)):
-
-                s_topics, s_scores = md.classifier_zero(classifier, sequence=sum_df['summary_text'][i], labels=label_list, multi_class=True)
-                ls_df = pd.DataFrame({'label': s_topics, 'scores_from_summary': s_scores})
-                ls_df['title'] = text_df['title'][i]
-                labels_sum_df = pd.concat([labels_sum_df, ls_df[labels_sum_col_list]])
+                if gen_summary == 'Yes':
+                    s_topics, s_scores = md.classifier_zero(classifier, sequence=sum_df['summary_text'][i], labels=label_list, multi_class=True)
+                    ls_df = pd.DataFrame({'label': s_topics, 'scores_from_summary': s_scores})
+                    ls_df['title'] = text_df['title'][i]
+                    labels_sum_df = pd.concat([labels_sum_df, ls_df[labels_sum_col_list]])
 
                 f_topics, f_scores = md.classifier_zero(classifier, sequence=text_df['text'][i], labels=label_list, multi_class=True)
                 lf_df = pd.DataFrame({'label': f_topics, 'scores_from_full_text': f_scores})
                 lf_df['title'] = text_df['title'][i]
                 labels_full_df = pd.concat([labels_full_df, lf_df[labels_full_col_list]])
 
-            label_match_df = pd.merge(labels_sum_df, labels_full_df, on=['title','label'])
+                with st.expander(f'({i+1}/{len(text_df)}) See intermediate label matching results'):
+                    st.write(f"Results for {text_df['title'][i]}")
+                    if gen_summary == 'Yes':
+                        st.dataframe(pd.merge(labels_sum_df, labels_full_df, on=['title','label']))
+                    else:
+                        st.dataframe(labels_full_df)
+
+            if gen_summary == 'Yes':
+                label_match_df = pd.merge(labels_sum_df, labels_full_df, on=['title','label'])
+            else:
+                label_match_df = labels_full_df.copy()
+
             st.dataframe(label_match_df)
             st.download_button(
                 label="Download data as CSV",
