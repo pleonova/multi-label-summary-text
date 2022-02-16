@@ -81,16 +81,16 @@ with st.form(key='my_form'):
     glabels = list(set([x.strip() for x in glabels.strip().split(',') if len(x.strip()) > 0]))
 
 
-    # glabels_csv_expander = st.expander(label=f'Have a file with labels for the text? Click here to upload your CSV file.', expanded=False)
-    # with glabels_csv_expander:
-    #     st.markdown('##### Choose one of the options below:')
-    #     st.write("__Option A:__")
-    #     uploaded_onetext_glabels_file = st.file_uploader("Single Text: Choose a CSV file with one column and no header, where each cell is a separate label",
-    #                                                      key = 'onetext_glabels_uploader')
-    #     st.write("__Option B:__")
-    #     uploaded_multitext_glabels_file = st.file_uploader('Multiple Text: Choose a CSV file with two columns "title" and "label", with the cells in the title column matching the name of the files uploaded in step #1.',
-    #                                                        key = 'multitext_glabels_uploader')
-    #
+    glabels_csv_expander = st.expander(label=f'Have a file with labels for the text? Click here to upload your CSV file.', expanded=False)
+    with glabels_csv_expander:
+        st.markdown('##### Choose one of the options below:')
+        st.write("__Option A:__")
+        uploaded_onetext_glabels_file = st.file_uploader("Single Text: Choose a CSV file with one column and no header, where each cell is a separate label",
+                                                         key = 'onetext_glabels_uploader')
+        st.write("__Option B:__")
+        uploaded_multitext_glabels_file = st.file_uploader('Multiple Text: Choose a CSV file with two columns "title" and "label", with the cells in the title column matching the name of the files uploaded in step #1.',
+                                                           key = 'multitext_glabels_uploader')
+
 
 
     # threshold_value = st.slider(
@@ -280,12 +280,19 @@ if submit_button or example_button:
             else:
                 label_match_df = labels_full_df.copy()
 
-            # TO DO: ADD Flexibility for csv import and multiple texts
             if len(glabels) > 0:
                 gdata = pd.DataFrame({'label': glabels})
+                join_list = ['label']
+            elif uploaded_onetext_glabels_file is not None:
+                gdata = pd.read_csv(uploaded_onetext_glabels_file, header=None)
+                join_list = ['label']
+            elif uploaded_multitext_glabels_file is not None:
+                gdata = pd.read_csv(uploaded_multitext_glabels_file)
+                join_list = ['title', 'label']
+
+            if len(glabels) > 0 or uploaded_onetext_glabels_file is not None or uploaded_multitext_glabels_file is not None:
                 gdata['correct_match'] = True
-            
-                label_match_df = pd.merge(label_match_df, gdata, how = 'left', on = ['label'])
+                label_match_df = pd.merge(label_match_df, gdata, how='outer', on=join_list)
                 label_match_df['correct_match'].fillna(False, inplace=True)
 
             st.dataframe(label_match_df)
@@ -295,7 +302,6 @@ if submit_button or example_button:
                 file_name='title_label_sum_full.csv',
                 mime='title_label_sum_full/csv',
             )
-
 
             # if len(glabels) > 0:
             #     st.markdown("### Evaluation Metrics")
@@ -313,4 +319,4 @@ if submit_button or example_button:
             #             st.dataframe(df_report)
 
         st.success('All done!')
-        # st.balloons()
+        st.balloons()
