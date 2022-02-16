@@ -215,8 +215,8 @@ if submit_button or example_button:
                     final_summary = "\n\n".join(list(summary))
                     sum_dict[key] = [final_summary]
 
-        sum_df = pd.DataFrame.from_dict(sum_dict).reset_index().T
-        # sum_df.columns = ['title', 'summary_text']
+        sum_df = pd.DataFrame.from_dict(sum_dict).T.reset_index()
+        sum_df.columns = ['title', 'summary_text']
 
     st.dataframe(sum_df)
     st.download_button(
@@ -226,8 +226,8 @@ if submit_button or example_button:
         mime='title_summary/csv',
     )
 
-    if (len(text_input) == 0 or len(labels) == 0
-            or uploaded_labels_file is None or uploaded_text_files is None or uploaded_csv_text_files is None):
+    if ((len(text_input) == 0 and uploaded_text_files is None or uploaded_csv_text_files is None)
+            or (len(labels) == 0 and uploaded_labels_file is None)):
         st.error('Enter some text and at least one possible topic to see label predictions.')
     else:
         st.markdown("### Top Label Predictions on Summary vs Full Text")
