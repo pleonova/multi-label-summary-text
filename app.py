@@ -30,10 +30,12 @@ if example_button:
     display_text = 'Excerpt from Frankenstein:' + example_text + '"\n\n' + "[This is an excerpt from Project Gutenberg's Frankenstein. " + ex_license + "]"
     input_labels = ex_labels
     input_glabels = ex_glabels
+    title_name = 'Frankenstein, Chapter 3'
 else:
     display_text = ''
     input_labels = ''
     input_glabels = ''
+    title_name = 'Submitted Text'
 
 
 with st.form(key='my_form'):
@@ -123,7 +125,7 @@ if submit_button or example_button:
     else:
 
         if len(text_input) != 0:
-            text_df = pd.DataFrame.from_dict({'title': ['Submitted Text'], 'text': [text_input]})
+            text_df = pd.DataFrame.from_dict({'title': [title_name], 'text': [text_input]})
 
         # OPTION A
         elif uploaded_text_files is not None:
@@ -270,12 +272,12 @@ if submit_button or example_button:
 
                 with st.expander(f'({i+1}/{len(text_df)}) See intermediate label matching results for: {text_df["title"][i]}'):
                     if gen_summary == 'Yes':
-                        st.dataframe(pd.merge(ls_df, lf_df, on=['label']))
+                        st.dataframe(pd.merge(ls_df, lf_df, on=['title','label']))
                     else:
                         st.dataframe(lf_df)
 
             if gen_summary == 'Yes':
-                label_match_df = pd.merge(labels_sum_df, labels_full_df, on=title_element + ['label'])
+                label_match_df = pd.merge(labels_sum_df, labels_full_df, on=['title', 'label'])
             else:
                 label_match_df = labels_full_df.copy()
 
@@ -296,7 +298,7 @@ if submit_button or example_button:
                 label_match_df = pd.merge(label_match_df, gdata, how='left', on=join_list)
                 label_match_df['correct_match'].fillna(False, inplace=True)
 
-            st.dataframe(label_match_df)
+            st.dataframe(label_match_df) #.sort_values(['title', 'label'], ascending=[False, False]))
             st.download_button(
                 label="Download data as CSV",
                 data=label_match_df.to_csv().encode('utf-8'),
