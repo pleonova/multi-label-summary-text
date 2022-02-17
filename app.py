@@ -82,6 +82,7 @@ with st.form(key='my_form'):
     ###################################
     ########   Form: Step 2  ##########
     ###################################
+    st.write('\n')
     st.markdown("##### Step 2: Enter Labels")
     labels = st.text_input('Enter possible topic labels, which can be either keywords and/or general themes (comma-separated):',input_labels, max_chars=2000)
     labels = list(set([x.strip() for x in labels.strip().split(',') if len(x.strip()) > 0]))
@@ -94,6 +95,7 @@ with st.form(key='my_form'):
     ###################################
     ########   Form: Step 3  ##########
     ###################################
+    st.write('\n')
     st.markdown("##### Step 3: Provide Ground Truth Labels (_Optional_)")
     glabels = st.text_input('If available, enter ground truth topic labels to evaluate results, otherwise leave blank (comma-separated):',input_glabels, max_chars=2000)
     glabels = list(set([x.strip() for x in glabels.strip().split(',') if len(x.strip()) > 0]))
