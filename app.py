@@ -18,12 +18,20 @@ ex_long_text = example_long_text_load()
 
 
 # if __name__ == '__main__':
+###################################
+######## App Description ##########
+###################################
 st.markdown("### Long Text Summarization & Multi-Label Classification")
 st.write("This app summarizes and then classifies your long text(s) with multiple labels using [BART Large MNLI](https://huggingface.co/facebook/bart-large-mnli). The keywords are generated using [KeyBERT](https://github.com/MaartenGr/KeyBERT).")
 st.write("__Inputs__: User enters their own custom text(s) and labels.")
 st.write("__Outputs__: A summary of the text, likelihood match score for each label and a downloadable csv of the results. \
     Includes additional options to generate a list of keywords and/or evaluate results against a list of ground truth labels, if available.")
 
+
+
+###################################
+########  Example Input  ##########
+###################################
 example_button = st.button(label='See Example')
 if example_button:
     example_text = ex_long_text #ex_text
@@ -38,7 +46,11 @@ else:
     title_name = 'Submitted Text'
 
 
+
 with st.form(key='my_form'):
+    ###################################
+    ########   Form: Step 1  ##########
+    ###################################
     st.markdown("##### Step 1: Upload Text")
     text_input = st.text_area("Input any text you want to summarize & classify here (keep in mind very long text will take a while to process):", display_text)
 
@@ -67,7 +79,9 @@ with st.form(key='my_form'):
         ('Yes', 'No')
         )
 
-    st.text("\n\n\n")
+    ###################################
+    ########   Form: Step 2  ##########
+    ###################################
     st.markdown("##### Step 2: Enter Labels")
     labels = st.text_input('Enter possible topic labels, which can be either keywords and/or general themes (comma-separated):',input_labels, max_chars=2000)
     labels = list(set([x.strip() for x in labels.strip().split(',') if len(x.strip()) > 0]))
@@ -77,7 +91,9 @@ with st.form(key='my_form'):
         uploaded_labels_file = st.file_uploader("Choose a CSV file with one column and no header, where each cell is a separate label",
                                                 key='labels_uploader')
 
-    st.text("\n\n\n")
+    ###################################
+    ########   Form: Step 3  ##########
+    ###################################
     st.markdown("##### Step 3: Provide Ground Truth Labels (_Optional_)")
     glabels = st.text_input('If available, enter ground truth topic labels to evaluate results, otherwise leave blank (comma-separated):',input_glabels, max_chars=2000)
     glabels = list(set([x.strip() for x in glabels.strip().split(',') if len(x.strip()) > 0]))
@@ -94,7 +110,6 @@ with st.form(key='my_form'):
                                                            key = 'multitext_glabels_uploader')
 
 
-
     # threshold_value = st.slider(
     #      'Select a threshold cutoff for matching percentage (used for ground truth label evaluation)',
     #      0.0, 1.0, (0.5))
@@ -103,6 +118,10 @@ with st.form(key='my_form'):
 
 st.write("_For improvments/suggestions, please file an issue here: https://github.com/pleonova/multi-label-summary-text_")
 
+
+###################################
+#######  Model Load Time  #########
+###################################
 with st.spinner('Loading pretrained models...'):
     start = time.time()
     summarizer = md.load_summary_model()   
@@ -119,7 +138,11 @@ with st.spinner('Loading pretrained models...'):
     st.spinner(f'Time taken to load various models: {k_time}s for KeyBERT model & {s_time}s for BART summarizer mnli model & {c_time}s for BART classifier mnli model.')
     # st.success(None)
 
+
 if submit_button or example_button:
+    ###################################
+    ########   Load Text Data   #######
+    ###################################
     if len(text_input) == 0 and uploaded_text_files is None and uploaded_csv_text_files is None:
         st.error("Enter some text to generate a summary")
     else:
@@ -157,6 +180,10 @@ if submit_button or example_button:
         else:
             title_element = ['title']
 
+
+        ###################################
+        ########   Text Chunks   ##########
+        ###################################
         with st.spinner('Breaking up text into more reasonable chunks (transformers cannot exceed a 1024 token max)...'):
             # For each body of text, create text chunks of a certain token size required for the transformer
 
@@ -172,6 +199,10 @@ if submit_button or example_button:
                 title_entry = text_df['title'][i]
                 text_chunks_lib[title_entry] = text_chunks
 
+
+    ################################
+    ########   Keywords   ##########
+    ################################
     if gen_keywords == 'Yes':
         st.markdown("### Top Keywords")
         with st.spinner("Generating keywords from text..."):
@@ -201,7 +232,9 @@ if submit_button or example_button:
             )
 
  
-
+    ###################################
+    ##########   Summarize   ##########
+    ###################################
     if gen_summary == 'Yes':
         st.markdown("### Summary")
         with st.spinner(f'Generating summaries for {len(text_df)} texts consisting of a total of {text_chunk_counter} chunks (this may take a minute)...'):
@@ -235,6 +268,9 @@ if submit_button or example_button:
             mime='title_summary/csv',
     )
 
+    ###################################
+    ##########   Classifier   #########
+    ###################################
     if ((len(text_input) == 0 and uploaded_text_files is None and uploaded_csv_text_files is None)
             or (len(labels) == 0 and uploaded_labels_file is None)):
         st.error('Enter some text and at least one possible topic to see label predictions.')
@@ -281,6 +317,9 @@ if submit_button or example_button:
             else:
                 label_match_df = labels_full_df.copy()
 
+            ###################################
+            ####### Ground Truth Labels  ######
+            ###################################
             if len(glabels) > 0:
                 gdata = pd.DataFrame({'label': glabels})
                 join_list = ['label']
