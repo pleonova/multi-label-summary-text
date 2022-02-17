@@ -268,12 +268,11 @@ if submit_button or example_button:
                 lf_df['title'] = text_df['title'][i]
                 labels_full_df = pd.concat([labels_full_df, lf_df[labels_full_col_list]])
 
-                with st.expander(f'({i+1}/{len(text_df)}) See intermediate label matching results'):
-                    st.write(f"Results for: {text_df['title'][i]}")
+                with st.expander(f'({i+1}/{len(text_df)}) See intermediate label matching results for: {text_df["title"][i]}'):
                     if gen_summary == 'Yes':
-                        st.dataframe(pd.merge(labels_sum_df, labels_full_df, on=['title','label']))
+                        st.dataframe(pd.merge(ls_df, lf_df, on=['label']))
                     else:
-                        st.dataframe(labels_full_df)
+                        st.dataframe(lf_df)
 
             if gen_summary == 'Yes':
                 label_match_df = pd.merge(labels_sum_df, labels_full_df, on=title_element + ['label'])
@@ -286,13 +285,15 @@ if submit_button or example_button:
             elif uploaded_onetext_glabels_file is not None:
                 gdata = pd.read_csv(uploaded_onetext_glabels_file, header=None)
                 join_list = ['label']
+                gdata.columns = join_list
             elif uploaded_multitext_glabels_file is not None:
                 gdata = pd.read_csv(uploaded_multitext_glabels_file)
                 join_list = ['title', 'label']
+                gdata.columns = join_list
 
             if len(glabels) > 0 or uploaded_onetext_glabels_file is not None or uploaded_multitext_glabels_file is not None:
                 gdata['correct_match'] = True
-                label_match_df = pd.merge(label_match_df, gdata, how='outer', on=join_list)
+                label_match_df = pd.merge(label_match_df, gdata, how='left', on=join_list)
                 label_match_df['correct_match'].fillna(False, inplace=True)
 
             st.dataframe(label_match_df)
