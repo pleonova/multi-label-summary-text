@@ -50,7 +50,7 @@ def keyword_gen(kw_model, sequence:str):
 # Reference: https://huggingface.co/facebook/bart-large-mnli
 @st.cache(allow_output_mutation=True)
 def load_summary_model():
-    model_name = "facebook/bart-large-mnli"
+    model_name = "facebook/bart-large-cnn"
     summarizer = pipeline(task='summarization', model=model_name)
     return summarizer
 

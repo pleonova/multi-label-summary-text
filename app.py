@@ -22,7 +22,7 @@ ex_long_text = example_long_text_load()
 ######## App Description ##########
 ###################################
 st.markdown("### Long Text Summarization & Multi-Label Classification")
-st.write("This app summarizes and then classifies your long text(s) with multiple labels using [BART Large MNLI](https://huggingface.co/facebook/bart-large-mnli). The keywords are generated using [KeyBERT](https://github.com/MaartenGr/KeyBERT).")
+st.write("This app summarizes and then classifies your long text(s) with multiple labels using [BART Large CNN](https://huggingface.co/facebook/bart-large-cnn) for the summarization task and [BART Large MNLI](https://huggingface.co/facebook/bart-large-mnli) for the multi-labels matching. The keywords are independently generated using [KeyBERT](https://github.com/MaartenGr/KeyBERT) and not used in any downstream tasks.")
 st.write("__Inputs__: User enters their own custom text(s) and labels.")
 st.write("__Outputs__: A summary of the text, likelihood match score for each label and a downloadable csv of the results. \
     Includes additional options to generate a list of keywords and/or evaluate results against a list of ground truth labels, if available.")
@@ -246,7 +246,7 @@ if submit_button or example_button:
                     # for key in text_chunks_lib:
                     summary = []
                     for num_chunk, text_chunk in enumerate(text_chunks_lib[key]):
-                        chunk_summary = md.summarizer_gen(summarizer, sequence=text_chunk, maximum_tokens=300, minimum_tokens=20)
+                        chunk_summary = md.summarizer_gen(summarizer, sequence=text_chunk, maximum_tokens=400, minimum_tokens=100)
                         summary.append(chunk_summary)
 
                         st.markdown(f"###### Original Text Chunk {num_chunk+1}/{len(text_chunks)}" )
