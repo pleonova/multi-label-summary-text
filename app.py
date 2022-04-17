@@ -145,7 +145,7 @@ if submit_button or example_button:
     ###################################
     ########   Load Text Data   #######
     ###################################
-    if len(text_input) == 0 and uploaded_text_files is None and uploaded_csv_text_files is None:
+    if len(text_input) == 0 and len(uploaded_text_files) == 0 and uploaded_csv_text_files is None:
         st.error("Enter some text to generate a summary")
     else:
 
@@ -153,7 +153,7 @@ if submit_button or example_button:
             text_df = pd.DataFrame.from_dict({'title': [title_name], 'text': [text_input]})
 
         # OPTION A
-        elif uploaded_text_files is not None:
+        elif len(uploaded_text_files) != 0:
             st.markdown("### Text Inputs")
             st.write('Files concatenated into a dataframe:')
             file_names = []
