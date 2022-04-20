@@ -168,7 +168,7 @@ if submit_button or example_button:
             st.dataframe(text_df.head())
             st.download_button(
                 label="Download data as CSV",
-                data=text_df.to_csv().encode('utf-8'),
+                data=text_df.to_csv(index = False).encode('utf-8'),
                 file_name='title_text.csv',
                 mime='title_text/csv',
             )
@@ -228,7 +228,7 @@ if submit_button or example_button:
             st.dataframe(kw_df)
             st.download_button(
                 label="Download data as CSV",
-                data=kw_df.to_csv().encode('utf-8'),
+                data=kw_df.to_csv(index = False).encode('utf-8'),
                 file_name='title_keywords.csv',
                 mime='title_keywords/csv',
             )
@@ -265,7 +265,7 @@ if submit_button or example_button:
         st.dataframe(sum_df)
         st.download_button(
             label="Download data as CSV",
-            data=sum_df.to_csv().encode('utf-8'),
+            data=sum_df.to_csv(index = False).encode('utf-8'),
             file_name='title_summary.csv',
             mime='title_summary/csv',
     )
@@ -342,7 +342,7 @@ if submit_button or example_button:
             st.dataframe(label_match_df) #.sort_values(['title', 'label'], ascending=[False, False]))
             st.download_button(
                 label="Download data as CSV",
-                data=label_match_df.to_csv().encode('utf-8'),
+                data=label_match_df.to_csv(index = False).encode('utf-8'),
                 file_name='title_label_sum_full.csv',
                 mime='title_label_sum_full/csv',
             )
