@@ -10,7 +10,6 @@ def create_nest_sentences(document:str, token_max_length = 1024):
   sent = []
   length = 0
   tokenizer = AutoTokenizer.from_pretrained('facebook/bart-large-mnli')
-  tokens = nlp(document)
 
   for sentence in re.split(r'(?<=[^A-Z].[.?]) +(?=[A-Z])', document.replace("\n", ' ')):
     tokens_in_sentence = tokenizer(str(sentence), truncation=False, padding=False)[0] # hugging face transformer tokenizer
