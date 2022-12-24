@@ -4,9 +4,6 @@ import streamlit as st
 from keybert import KeyBERT
 
 
-import spacy
-nlp = spacy.load('en_core_web_sm')
-
 # Reference: https://discuss.huggingface.co/t/summarization-on-long-documents/920/7
 def create_nest_sentences(document:str, token_max_length = 1024):
   nested = []
@@ -15,7 +12,7 @@ def create_nest_sentences(document:str, token_max_length = 1024):
   tokenizer = AutoTokenizer.from_pretrained('facebook/bart-large-mnli')
   tokens = nlp(document)
 
-  for sentence in tokens.sents:
+  for sentence in re.split(r'(?<=[^A-Z].[.?]) +(?=[A-Z])', document.replace("\n", ' ')):
     tokens_in_sentence = tokenizer(str(sentence), truncation=False, padding=False)[0] # hugging face transformer tokenizer
     length += len(tokens_in_sentence)
 
