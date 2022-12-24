@@ -20,7 +20,7 @@ def create_nest_sentences(document:str, token_max_length = 1024):
       sent.append(sentence)
     else:
       nested.append(sent)
-      sent = [sentences]
+      sent = [sentence]
       length = 0
 
   if sent:
