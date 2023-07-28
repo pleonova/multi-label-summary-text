@@ -4,4 +4,4 @@ streamlit==1.10.0
 torch==1.12.0
 scikit-learn==1.1.1
 KeyBERT==0.5.1
-protobuf==3.12
+protobuf==4.23.4
