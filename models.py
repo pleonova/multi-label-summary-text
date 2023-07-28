@@ -28,7 +28,7 @@ def create_nest_sentences(document:str, token_max_length = 1024):
   return nested
 
 # Reference: https://github.com/MaartenGr/KeyBERT
-@st.cache(allow_output_mutation=True)
+@st.cache_resource
 def load_keyword_model():
   kw_model = KeyBERT()
   return kw_model
@@ -45,7 +45,7 @@ def keyword_gen(kw_model, sequence:str):
 
 
 # Reference: https://huggingface.co/facebook/bart-large-mnli
-@st.cache(allow_output_mutation=True)
+@st.cache_resource
 def load_summary_model():
     model_name = "facebook/bart-large-cnn"
     summarizer = pipeline(task='summarization', model=model_name)
@@ -82,7 +82,7 @@ def summarizer_gen(summarizer, sequence:str, maximum_tokens:int, minimum_tokens:
 
 
 # Reference: https://huggingface.co/spaces/team-zero-shot-nli/zero-shot-nli/blob/main/utils.py
-@st.cache(allow_output_mutation=True)
+@st.cache_resource
 def load_model():
     model_name = "facebook/bart-large-mnli"
     tokenizer = AutoTokenizer.from_pretrained(model_name)
